@@ -1,0 +1,31 @@
+table{
+    width: 500px;
+    height: 200px;
+    margin-bottom: 20px;
+}
+table,th,td{
+    border: 1px solid black;
+    border-collapse: collapse;
+    padding: 10px;
+}
+td{
+    padding: auto;
+    text-align: center;
+}
+.header{
+    width: 100%;
+    max-width: 1024px;
+    display: flex;
+    justify-content: center;
+}
+.headerContainer{
+    margin: 20px;
+    align-items: center;
+    display:flex;
+    gap:30px;
+    width: 100%;
+    margin: 20px;
+}
+.trades{
+    margin-left: 20px;
+}
