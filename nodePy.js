@@ -20,7 +20,7 @@ app.use(cors())
 // app.use("/getData",getData)
 
 app.get("/",(req,res)=>{
-    res.redirect("http://localhost:3000")
+    return res.redirect("http://localhost:3000")
 })
 
 app.get('/getData',(req,res)=>{
@@ -47,14 +47,16 @@ fs.readFile("data2.json","utf-8",(erra,datae)=>{
     }else{
         var dataAtrr= new Array()
         dataAtrr.push(datae)
-        var jsonData1=JSON.parse(dataAtrr)
         // console.log(dataAtrr)
+        setTimeout(()=>{
+        var jsonData1=JSON.parse(dataAtrr)     
         
         // console.log(jsonData1)
         tradeDetails.openTrades=jsonData1      
         tradeJson=JSON.stringify(tradeDetails)
         console.log(tradeDetails)
         res.send(tradeDetails)
+        },2000)
     }
 })
 
@@ -98,6 +100,36 @@ moongoose.connect(dbURI,{usenewUrlParser:true,useUnifiedTopology:true})
 .catch((err)=>{
     console.log(err.message)
 })
+app.post("/logon",async(req,res)=>{
+    console.log("The request object is", req.body)
+    var email= req.body.email
+    var password = req.body.password
+    // change the password to string
+    var em_str=email.toString()
+    var pas_string= password.toString()
+    // try looking for a match in the database
+    Chunk.find()        
+    .then( async(result)=>{
+        for (var i =0;i<result.length;i++){
+            // check whether the email exists
+            if (result[i].email === em_str){
+                console.log("we have found a match")
+                // compare the password of the email
+                pass_result= await bcrypt.compare(pas_string,result[i].password)
+                if(pass_result === true){
+                    console.log("Login successful")
+                    return res.json({message:"ok"})
+                }else{
+                    console.log("Please put in the correct password")
+                    res.json("Failed")
+                }
+            }else{
+                console.log("Account not found, please put in correct credentials or register")
+                res.json("Failed")
+            }
+        }
+    })
+})
 app.post("/submit",async(req,res)=>{
     var i;
     console.log(req.body)
@@ -126,7 +158,7 @@ app.post("/submit",async(req,res)=>{
                     .then((result)=>{
                         if (result){
                             console.log("data has been saved successfully")
-                            res.redirect("/")                            
+                            return res.redirect("/")                            
                         }else{
                             console.log("Something went wrong during saving")
                         }
@@ -144,7 +176,7 @@ app.post("/submit",async(req,res)=>{
             .then((result)=>{
                 if (result){
                     console.log("data has been saved successfully")
-                    res.redirect("/")
+                    return res.redirect("/")
                 }else{
                     console.log("Something went wrong during saving")
                 }

@@ -248,7 +248,6 @@ def market_order(symbol,volume,order_type,deviation,magic,stoploss,takeprofit):
             this_Dict=df_positions.to_dict("list")
             # print(this_Dict)
             with open("data2.json","w") as posit:
-                posit.seek(0)
                 json.dump(this_Dict,posit)
         time.sleep(5)
        
@@ -732,6 +731,8 @@ def main():
                     orders=mt5.positions_get()
                     if orders == None :
                         print(f"The are no open positions")
+                        with open("data2.json","w+") as openD:
+                            json.dump({"None":"none"},openD)
                     elif len(orders)>1:
                         df_positions=pd.DataFrame(list(orders),columns=orders[0]._asdict().keys())[["symbol","profit","sl","tp","volume","price_open"]]
                         
@@ -740,7 +741,6 @@ def main():
                         
                         # print(this_Dict)
                         with open("data2.json","w+") as posit:
-                            posit.seek(0)
                             json.dump(this_Dict,posit)
                     if signal != None and standard_deviation !=None:
                         print(f"The signal is {signal} and the standard deviation is {standard_deviation}")
@@ -823,10 +823,7 @@ def main():
                             elif trade_signal == "sell" and signal != None:
                                 market_order(J,VOLUME,"sell",DEVIATION,MAGIC,tick.bid +SL,tick.ask-TP_SD*standard_deviation)
             # check for signal every 12 seconds
-        with open("data1.json","w+") as dataF:
-            dataF.seek(0)
-            dataF.truncate(0)
-            
+        with open("data1.json","w+") as dataF:                       
             json.dump(resy,dataF)
             # check for signal every 5 seconds
                     # print(json.dumps(resy))   

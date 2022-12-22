@@ -1,5 +1,5 @@
 import "./Header.css"
-import React,{useState} from "react";
+import React,{useState,useEffect} from "react";
 import DataTable from "./DataTable";
 import DisplayTable from "./displayTable";
 
@@ -11,8 +11,12 @@ function Header(){
     var symbols =[]
     const[errr,setError]=useState(null)
     const [tb_data,setTbdata] =useState(null)
+    var [rows,setRows]=useState(new Array())
     var [thisArr,setthisArr]=useState(new Array())
-    const [order_tb,setOdTable] =useState(null)
+    const [open,setOpen] =useState(new Array())
+    const [takeP,setTakeP]=useState(new Array())
+    const [stopL,setStopL]=useState(new Array())
+    const [profit,setProfit]=useState(new Array())
     const[XAUUSD,setXAUUSD]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
     const[EURUSD,setEURUSD]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
     const[USDCAD,setUSDCAD]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
@@ -21,12 +25,12 @@ function Header(){
     const[GBPJPY,setGBPJPY]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
     const[AUDCAD,setAUDCAD]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
     const[USDJPY,setUSDJPY]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
+    const[numberss,setNumber]=useState(0)
+
     
-
-
-
-    const finData = () =>{
+    useEffect(()=>{
     setInterval(()=>{
+    setNumber(numberss+1)
     fetch("http://localhost:4444/getData",{
         method:"GET",
         mode:"cors",
@@ -43,12 +47,17 @@ function Header(){
     console.log("The type of the data is",typeof(dataF))
     console.log("The signals are", signals)
     console.log("The open trades are", openTrades)
+    setthisArr(openTrades.symbol)
+    setOpen(openTrades.price_open)
+    setTakeP(openTrades.tp)
+    setStopL(openTrades.sl)
+    setProfit(openTrades.profit)
     
     
     })
     .catch(err=>setError(err))
     
-    showPosTable(openTrades)
+    // showPosTable(openTrades)
     console.log("the signals are", signals)
     setTbdata(signals.map((item)=>{
         if (item.Symbol==="XAUUSD"){
@@ -128,116 +137,9 @@ function Header(){
     }))
     
     console.log("The openTrades are",openTrades)
-    
-    // openTrades.forEach((item)=>{
-    //     for (var i = 0;i<item.symbol.length;i++){
-    //         if (item.symbol[i] === "XAUUSD"){
-    //             setXAUUSD((prev)=>{
-    //                 return{
-    //                     ...prev,
-    //                     open:item.price_open[i],
-    //                     profit:item.profit[i],
-    //                     sl:item.sl[i],
-    //                     tp:item.tp[i],
-    //                     symbol:"XAUUSD"                   
-    //                 }
-    //             })
-    //         }else if (item.symbol[i] === "EURUSD"){
-    //             setEURUSD((prev)=>{
-    //                 return{
-    //                     ...prev,
-    //                     open:item.price_open[i],
-    //                     profit:item.profit[i],
-    //                     sl:item.sl[i],
-    //                     tp:item.tp[i],
-    //                     symbol:"EURUSD"                   
-    //                 }
-    //             })
-    //         }else if (item.symbol[i] === "USDCAD"){
-    //             setUSDCAD((prev)=>{
-    //                 return{
-    //                     ...prev,
-    //                     open:item.price_open[i],
-    //                     profit:item.profit[i],
-    //                     sl:item.sl[i],
-    //                     tp:item.tp[i],
-    //                     symbol:"USDCAD"                   
-    //                 }
-    //             })
-    //         } else if (item.symbol[i] === "USDJPY"){
-    //             setUSDJPY((prev)=>{
-    //                 return{
-    //                     ...prev,
-    //                     open:item.price_open[i],
-    //                     profit:item.profit[i],
-    //                     sl:item.sl[i],
-    //                     tp:item.tp[i],
-    //                     symbol:"USDJPY"                   
-    //                 }
-    //             })
-    //         } else if (item.symbol[i] === "GBPUSD"){
-    //             setGBPUSD((prev)=>{
-    //                 return{
-    //                     ...prev,
-    //                     open:item.price_open[i],
-    //                     profit:item.profit[i],
-    //                     sl:item.sl[i],
-    //                     tp:item.tp[i],
-    //                     symbol:"GBPUSD"                   
-    //                 }
-    //             })
-    //         }else if (item.symbol[i] === "GBPJPY"){
-    //             setGBPJPY((prev)=>{
-    //                 return{
-    //                     ...prev,
-    //                     open:item.price_open[i],
-    //                     profit:item.profit[i],
-    //                     sl:item.sl[i],
-    //                     tp:item.tp[i],
-    //                     symbol:"GBPJPY"                   
-    //                 }
-    //             })
-    //         }else if (item.symbol[i] === "EURJPY"){
-    //             setEURJPY((prev)=>{
-    //                 return{
-    //                     ...prev,
-    //                     open:item.price_open[i],
-    //                     profit:item.profit[i],
-    //                     sl:item.sl[i],
-    //                     tp:item.tp[i],
-    //                     symbol:"EURJPY"                   
-    //                 }
-    //             })
-    //         } else if (item.symbol[i] === "AUDCAD"){
-    //             setAUDCAD((prev)=>{
-    //                 return{
-    //                     ...prev,
-    //                     open:item.price_open[i],
-    //                     profit:item.profit[i],
-    //                     sl:item.sl[i],
-    //                     tp:item.tp[i],
-    //                     symbol:"AUDCAD"                   
-    //                 }
-    //             })
-    //         }
-    //     }        
-    // })
-    
-    // console.log(tb_data)
-    
-    
-    
-    },10000)
-    }
-    const showPosTable = (openTrades)=>{
-        console.log("These are the openTrades",openTrades)         
-        setthisArr([...Array(openTrades.symbol.length).keys()])
-        console.log("The symbols arr has a length of",thisArr)        
-
-    }
-
-    
-    
+        },10000)
+},[numberss])
+   
     return(
         
         <div className="header">
@@ -321,22 +223,25 @@ function Header(){
                            
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody>                      
+                        
                         { 
-                            thisArr.map((item,i)=>{
-                                return(
-                                <tr key={i}>
-                                    <td>{item+1}</td>
-                                    <td>{openTrades.symbol[item]}</td>
-                                    <td>{openTrades.price_open[item]}</td>
-                                    <td>{openTrades.tp[item]}</td>
-                                    <td>{openTrades.sl[item]}</td>
-                                    <td>{openTrades.profit[item]}</td>
-                                </tr>
-                                )
+                            
+                                thisArr.map((item,r)=>{
+                                    return (
+                                    <tr key={r}>      
+                                        <td>{r}</td>                      
+                                        <td>{item}</td>
+                                        <td>{open[r]}</td>
+                                        <td>{takeP[r]}</td>
+                                        <td>{stopL[r]}</td>
+                                        <td>{profit[r]}</td>                
+                                    </tr>    
+                                    )
                             })
-                        }      
-                      
+                        }
+                        
+                        
                     </tbody>
                 </table>
                     
@@ -347,9 +252,10 @@ function Header(){
                 
                 
             </div>
-            <div>
+            <div className="footWrapper">
                 <div>The Error is{errr}</div>
-                <button onClick={()=>finData()}>Get Data</button>
+                <button >Get Data</button>
+                <div>{numberss}</div>
             </div>
         </div>
     );

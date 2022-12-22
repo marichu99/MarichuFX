@@ -11,7 +11,9 @@ function Login(){
   const [lname,setLname]=useState(null)
   const [email,setEmail]=useState(null)
   const [password,setPassword]=useState(null)
+  const [logSucess,setLogSuccess]= useState(null)
   const details={fname,lname,email,password}
+  const logDetails={email,password}
   const navigate =useNavigate()
   const submit =()=>{
 
@@ -25,10 +27,24 @@ function Login(){
     })
     .then(()=>{
       console.log("Post request successful")
+    })    
+    navigate("/")    
+  }
+  const logon= ()=>{
+    // use fetch to connect to the backend
+    fetch("http://localhost:4444/logon",{
+      method:"POST",
+      mode:"cors",
+      headers:{
+        "Content-type":"application/json"
+      },
+      body:JSON.stringify(logDetails)
     })
-    
-    navigate("/")
-
+    .then(res =>res.json())
+    .then(data => setlogSuccess(data.message))
+    .catch((err)=>{
+      console.log("The error is", err.message)
+    })
     
   }
   
@@ -58,12 +74,13 @@ function Login(){
               <button className="toggle-btn" onClick={()=>signup()}>Signup</button>
         </div>
            <form id="login" className="input-group" ref={loginn}>
-            <input type="email" id="email" placeholder="Enter your Email address" name="email" required className="input-box"/><br/>
-            <input type="password" id="password" placeholder="Enter your password" name="password" required className="input-box"/><br/>
-            <input type="submit" id="submit" className="btn-submit"/><br/>
+            <input type="email" id="email" placeholder="Enter your Email address" name="email" required className="input-box" onChange={(e)=>setFname(e.target.value)}/><br/>
+            <input type="password" id="password" placeholder="Enter your password" name="password" required className="input-box" onChange={(e)=>setEmail(e.target.value)}/><br/>
+            <input type="submit" id="submit" className="btn-submit" onClick={()=>{logon()}}/><br/>
                <a href="/signup.html">Don't have an account?</a><br/>
                <a href="/sadmin">Admin</a>
-               <a href="/forget">Forgot Password</a>
+               <a href="/forget">Forgot Password</a><br/>
+            <button onClick={()=>console.log(logSucess)}>Success?</button>
            </form>
             <form id="signup" className="input-group" ref={signupp}>
             <input type="text" id="first" placeholder="Enter your First Name" name="fname" className="input-box" required onChange={(e)=>setFname(e.target.value)}/><br/>
