@@ -11,7 +11,7 @@ function Login(){
   const [lname,setLname]=useState(null)
   const [email,setEmail]=useState(null)
   const [password,setPassword]=useState(null)
-  const [logSucess,setLogSuccess]= useState(null)
+  const [logSucess,setLogSuccess]= useState("MABERA")
   const details={fname,lname,email,password}
   const logDetails={email,password}
   const navigate =useNavigate()
@@ -41,7 +41,10 @@ function Login(){
       body:JSON.stringify(logDetails)
     })
     .then(res =>res.json())
-    .then(data => setlogSuccess(data.message))
+    .then(data => {
+      setLogSuccess(data.message)
+      console.log(data.message)
+    })
     .catch((err)=>{
       console.log("The error is", err.message)
     })
@@ -73,16 +76,15 @@ function Login(){
               <button className="toggle-btn" onClick={()=>login()}>Login</button>
               <button className="toggle-btn" onClick={()=>signup()}>Signup</button>
         </div>
-           <form id="login" className="input-group" ref={loginn}>
+           <form id="login" className="input-group" ref={loginn} onSubmit={()=>false} method="POST" action="http://localhost:4444/logon">
             <input type="email" id="email" placeholder="Enter your Email address" name="email" required className="input-box" onChange={(e)=>setFname(e.target.value)}/><br/>
             <input type="password" id="password" placeholder="Enter your password" name="password" required className="input-box" onChange={(e)=>setEmail(e.target.value)}/><br/>
             <input type="submit" id="submit" className="btn-submit" onClick={()=>{logon()}}/><br/>
                <a href="/signup.html">Don't have an account?</a><br/>
                <a href="/sadmin">Admin</a>
                <a href="/forget">Forgot Password</a><br/>
-            <button onClick={()=>console.log(logSucess)}>Success?</button>
            </form>
-            <form id="signup" className="input-group" ref={signupp}>
+            <form id="signup" className="input-group" ref={signupp} onSubmit={()=>false} method="POST">
             <input type="text" id="first" placeholder="Enter your First Name" name="fname" className="input-box" required onChange={(e)=>setFname(e.target.value)}/><br/>
             <input type="text" id="last" placeholder="Enter your Last Name" name="lname" required className="input-box" onChange={(e)=>setLname(e.target.value)}/><br/>
             <input type="email" id="email" placeholder="Enter your Email address" name="email" required className="input-box" onChange={(e)=>setEmail(e.target.value)}/><br/>

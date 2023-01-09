@@ -9,6 +9,7 @@ const Chunk = require("./models/people")
 dotenv.config()
 const {spawn} =require("child_process")
 const bcrypt= require("bcrypt")
+const router = express.Router()
 
 
 // const getData= require("./modules/getData")
@@ -20,7 +21,7 @@ app.use(cors())
 // app.use("/getData",getData)
 
 app.get("/",(req,res)=>{
-    return res.redirect("http://localhost:3000")
+    res.redirect("http://localhost:3000")
 })
 
 app.get('/getData',(req,res)=>{
@@ -35,10 +36,12 @@ fs.readFile("data1.json","utf-8",(err,data)=>{
     if(err){
         console.log(err.message)
     }else{
+        setTimeout(()=>{
         var jsonData =JSON.parse(data)
         // console.log(jsonData)
         // var jsonArray=[jsonData]        
         tradeDetails.signals=jsonData
+        },2000)
     }
 })
 fs.readFile("data2.json","utf-8",(erra,datae)=>{
@@ -104,6 +107,7 @@ app.post("/logon",async(req,res)=>{
     console.log("The request object is", req.body)
     var email= req.body.email
     var password = req.body.password
+    var found =false
     // change the password to string
     var em_str=email.toString()
     var pas_string= password.toString()
@@ -118,12 +122,14 @@ app.post("/logon",async(req,res)=>{
                 pass_result= await bcrypt.compare(pas_string,result[i].password)
                 if(pass_result === true){
                     console.log("Login successful")
-                    return res.json({message:"ok"})
+                    found=true
+                    res.redirect("http://localhost:4444/")
+                    break;
                 }else{
                     console.log("Please put in the correct password")
                     res.json("Failed")
                 }
-            }else{
+            }else if (i === result.length-1 && found === false){
                 console.log("Account not found, please put in correct credentials or register")
                 res.json("Failed")
             }
