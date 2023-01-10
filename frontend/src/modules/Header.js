@@ -145,6 +145,7 @@ function Header(){
         <div className="header">
         
             <div className="headerContainer">
+                <h1>Trade Signals</h1>
                 <table className="trades">
                     <thead>
                         <tr>
@@ -211,6 +212,7 @@ function Header(){
                         
        
                 </table>
+                <h1>Open Trades</h1>
                 <table className="trades">
                     <thead>
                         <tr>
