@@ -32,7 +32,7 @@ var tradeDetails= {
 }
 
 
-fs.readFile("data1.json","utf-8",(err,data)=>{
+fs.readFile("data3.json","utf-8",(err,data)=>{
     if(err){
         console.log(err.message)
     }else{

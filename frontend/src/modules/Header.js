@@ -17,14 +17,13 @@ function Header(){
     const [takeP,setTakeP]=useState(new Array())
     const [stopL,setStopL]=useState(new Array())
     const [profit,setProfit]=useState(new Array())
-    const[XAUUSD,setXAUUSD]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
-    const[EURUSD,setEURUSD]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
-    const[USDCAD,setUSDCAD]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
-    const[GBPUSD,setGBPUSD]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
-    const[EURJPY,setEURJPY]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
-    const[GBPJPY,setGBPJPY]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
-    const[AUDCAD,setAUDCAD]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
-    const[USDJPY,setUSDJPY]= useState({Type:null,MultiTimeFrame:null,open:null,tp:null,sl:null,profit:null,symbol:null})
+
+    const [price_arr,setPriceArr]=useState(new Array())
+    const [ask,setAsk]=useState(new Array())
+    const [bid,setBid]=useState(new Array())
+    const [symbol,setSymbol]= useState(new Array())
+    const [change,setChange]= useState(new Array())
+
     const[numberss,setNumber]=useState(0)
 
     
@@ -47,11 +46,21 @@ function Header(){
     console.log("The type of the data is",typeof(dataF))
     console.log("The signals are", signals)
     console.log("The open trades are", openTrades)
+    // the code below will be used to fill up arrays that will be used to display rows on the openTrades
     setthisArr(openTrades.symbol)
     setOpen(openTrades.price_open)
     setTakeP(openTrades.tp)
     setStopL(openTrades.sl)
     setProfit(openTrades.profit)
+    // the code below will be used to fill up arrays that show price information on famous pairs
+    if (signals!= null){
+    setPriceArr(signals.symbol)
+    setAsk(signals.ask)
+    setBid(signals.bid)
+    setSymbol(signals.symbol)
+    setChange(signals.price_change)
+    }
+    
     
     
     })
@@ -59,83 +68,7 @@ function Header(){
     
     // showPosTable(openTrades)
     console.log("the signals are", signals)
-    setTbdata(signals.map((item)=>{
-        if (item.Symbol==="XAUUSD"){
-            setXAUUSD((prev)=>{
-                return{  
-                        ...prev,      
-                        Type:item.Type,
-                        MultiTimeFrame:item.MultiTimeFrame
-                    }
-            })
-        }
-        if (item.Symbol==="EURUSD"){
-                setEURUSD((prev)=>{
-                    return{  
-                            ...prev,          
-                            Type:item.Type,
-                            MultiTimeFrame:item.MultiTimeFrame
-                        }
-                })
-        } else if (item.Symbol==="USDCAD"){
-            setUSDCAD((prev)=>{
-                return{  
-                        ...prev,   
-                        Type:item.Type,
-                        MultiTimeFrame:item.MultiTimeFrame
-                    }
-            })
-        } else if (item.Symbol==="GBPUSD"){
-            setGBPUSD((prev)=>{
-                return{  
-                        ...prev,               
-                        Type:item.Type,
-                        MultiTimeFrame:item.MultiTimeFrame
-                    }
-            })
-        } else if (item.Symbol==="EURJPY"){
-            setEURJPY((prev)=>{
-                return{  
-                    ...prev,          
-                        Type:item.Type,
-                        MultiTimeFrame:item.MultiTimeFrame
-                    }
-            })
-        } else if (item.Symbol==="GBPJPY"){
-            setGBPJPY((prev)=>{
-                return{  
-                        ...prev,              
-                        Type:item.Type,
-                        MultiTimeFrame:item.MultiTimeFrame
-                    }
-            })
-        } else if (item.Symbol==="AUDCAD"){
-            setAUDCAD((prev)=>{
-                return{  
-                        ...prev,              
-                        Type:item.Type,
-                        MultiTimeFrame:item.MultiTimeFrame
-                    }
-            })
-        } else if (item.Symbol==="USDJPY"){
-            setUSDJPY((prev)=>{
-                return{      
-                        ...prev,         
-                        Type:item.Type,
-                        MultiTimeFrame:item.MultiTimeFrame
-                    }
-            })
-        }
-        return(
-            <tr key={item.id}>
-                <td>{item.id}</td>
-                <td>{item.Symbol}</td>
-                <td>{item.Type}</td>
-                <td>{item.MultiTimeFrame}</td>
-            </tr>
-        )
-    }))
-    
+        
     console.log("The openTrades are",openTrades)
         },10000)
 },[numberss])
@@ -151,68 +84,36 @@ function Header(){
                         <tr>
                             <td>ID</td>
                             <td>Symbol</td>
-                            <td>Type</td>
-                            <td>Multi-Time Frame</td>
+                            <td>Ask</td>
+                            <td>Bid</td>
+                            <td>Change</td>
                         </tr>
                     </thead>
                     <tbody>
                         
                             {/* {tb_data}                             */}
-                            <tr>
-                                <td id ="1">1</td>
-                                <td>XAUUSD</td>
-                                <td>{XAUUSD.Type}</td>
-                                <td>{XAUUSD.MultiTimeFrame}</td>
-                            </tr>
-                            <tr>
-                                <td id ="2">2</td>
-                                <td>EURUSD</td>
-                                <td>{EURUSD.Type}</td>
-                                <td>{EURUSD.MultiTimeFrame}</td>
-                            </tr>
-                            <tr>
-                                <td id ="3">3</td>
-                                <td>USDCAD</td>
-                                <td>{USDCAD.Type}</td>
-                                <td>{USDCAD.MultiTimeFrame}</td>
-                            </tr>
-                            <tr>
-                                <td id ="4">4</td>
-                                <td>EURJPY</td>
-                                <td>{EURJPY.Type}</td>
-                                <td>{EURJPY.MultiTimeFrame}</td>
-                            </tr>
-                            <tr>
-                                <td id ="5">5</td>
-                                <td>GBPJPY</td>
-                                <td>{GBPJPY.Type}</td>
-                                <td>{GBPJPY.MultiTimeFrame}</td>                                
-                            </tr>
-                            <tr>
-                                <td id ="6">6</td>
-                                <td>USDJPY</td>
-                                <td>{USDJPY.Type}</td>
-                                <td>{USDJPY.MultiTimeFrame}</td>
-                            </tr>
-                            <tr>
-                                <td id ="7">7</td>
-                                <td>AUDCAD</td>
-                                <td>{AUDCAD.Type}</td>
-                                <td>{AUDCAD.MultiTimeFrame}</td>
-                            </tr>
-                            <tr>
-                                <td id ="8">8</td>
-                                <td>GBPUSD</td>
-                                <td>{GBPUSD.Type}</td>
-                                <td>{GBPUSD.MultiTimeFrame}</td>
-                            </tr>
+                            {
+                                price_arr.map((item,r)=>{
+                                    return(
+                                        <tr key={r}>
+                                            <td>{r}</td>
+                                            <td>{symbol[r]}</td>
+                                            <td>{ask[r]}</td>
+                                            <td>{bid[r]}</td>
+                                            <td>{change[r]}</td>
+                                        </tr>
+                                        
+                                    )
+                                })
+                            }
                             
                         
                     </tbody>
                         
        
                 </table>
-                <h1>Open Trades</h1>
+                <h1>Open Trades                  
+                </h1>
                 <table className="trades">
                     <thead>
                         <tr>

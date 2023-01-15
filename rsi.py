@@ -241,7 +241,7 @@ def market_order(symbol,volume,order_type,deviation,magic,stoploss,takeprofit):
         orders=mt5.positions_get()
         if orders == None :
             print(f"The are no open positions")
-        elif len(orders)>1:
+        elif len(orders)>=1:
             df_positions=pd.DataFrame(list(orders),columns=orders[0]._asdict().keys())[["symbol","profit","sl","tp","volume","price_open"]]
             # print(df_positions)
             
@@ -650,9 +650,28 @@ def await_Details(type):
                 # sell order
                 market_order(J,VOLUME,"sell",DEVIATION,MAGIC,tick.bid +x,tick.ask-TP_SD*standa1)
              
-                
-def main():
-    
+dataF_arr=[]
+def concatDF():   
+    global dataF_arr
+    for symb in SYMBOL:
+        xau=mt5.symbol_info(symb)._asdict()
+        gold=pd.DataFrame.from_dict([xau])[["ask","bid","price_change"]]
+        gold["symbol"]=symb
+        dataF_arr.append(gold)
+        # print(dataF_arr)
+    # print(f"The length is {len(dataF_arr)}")
+    if len(dataF_arr) == 8:
+        new_Data_DF=pd.concat(dataF_arr,axis=0,ignore_index=True)
+        # print(new_Data_DF)
+        # create a dict that will be used as JSON
+        price_Dict=new_Data_DF.to_dict("list")
+        # open the json file
+        with open("data3.json","w+") as prices:
+            json.dump(price_Dict,prices)
+    elif len(dataF_arr) > 8:
+        dataF_arr=[]
+      
+def main():    
     conn()
     # strategy loop
     id=0
@@ -727,21 +746,23 @@ def main():
                         t_sell=True
                     elif current_price>previous_price and previous_price>latter_price:
                         t_buy=True
-                    signal, standard_deviation =get_signal(TIMEFRAMEs=s)
+                    # concat different price DataFrames that will display price in real time
+                    concatDF()
+                    # get the open trade positions
                     orders=mt5.positions_get()
                     if orders == None :
                         print(f"The are no open positions")
                         with open("data2.json","w+") as openD:
                             json.dump({"None":"none"},openD)
-                    elif len(orders)>1:
-                        df_positions=pd.DataFrame(list(orders),columns=orders[0]._asdict().keys())[["symbol","profit","sl","tp","volume","price_open"]]
-                        
+                    elif len(orders)>=1:
+                        df_positions=pd.DataFrame(list(orders),columns=orders[0]._asdict().keys())[["symbol","profit","sl","tp","volume","price_open"]]                        
                         # print(df_positions)
-                        this_Dict=df_positions.to_dict("list")
-                        
+                        this_Dict=df_positions.to_dict("list")                        
                         # print(this_Dict)
                         with open("data2.json","w+") as posit:
                             json.dump(this_Dict,posit)
+                    # get the signal and the standard deviation for price analysis
+                    signal, standard_deviation =get_signal(TIMEFRAMEs=s)
                     if signal != None and standard_deviation !=None:
                         print(f"The signal is {signal} and the standard deviation is {standard_deviation}")
                         print(f"The symbol is {J} and the Timeframe is {t_type}")
