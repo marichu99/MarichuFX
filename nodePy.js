@@ -26,42 +26,46 @@ app.get("/",(req,res)=>{
 
 app.get('/getData',(req,res)=>{
 
-var tradeDetails= {
-    signals:null,
-    openTrades:null
-}
+
 
 
 fs.readFile("data3.json","utf-8",(err,data)=>{
     if(err){
         console.log(err.message)
     }else{
-        setTimeout(()=>{
-        var jsonData =JSON.parse(data)
-        // console.log(jsonData)
-        // var jsonArray=[jsonData]        
-        tradeDetails.signals=jsonData
-        },2000)
+        // create an array for the currency pairs
+        var pair_Arr= new Array()
+        // push the data to the created array
+        setTimeout(() => {
+        pair_Arr.push(data)
+        // parse the array of objects into JSON
+        pair_JSON=JSON.parse(pair_Arr)
+        // stringify the JSON
+        pair_STRING=JSON.stringify(pair_JSON)
+        console.log(pair_JSON)
+        res.send(pair_STRING)
+        }, 2000);
+
     }
 })
-fs.readFile("data2.json","utf-8",(erra,datae)=>{
-    if(erra){
-        console.log("The error is ",erra.message)
-    }else{
-        var dataAtrr= new Array()
-        dataAtrr.push(datae)
-        // console.log(dataAtrr)
-        setTimeout(()=>{
-        var jsonData1=JSON.parse(dataAtrr)     
+// fs.readFile("data2.json","utf-8",(erra,datae)=>{
+//     if(erra){
+//         console.log("The error is ",erra.message)
+//     }else{
+//         var dataAtrr= new Array()
+//         dataAtrr.push(datae)
+//         // console.log(dataAtrr)
+//         setTimeout(()=>{
+//         var jsonData1=JSON.parse(dataAtrr)     
         
-        // console.log(jsonData1)
-        tradeDetails.openTrades=jsonData1      
-        tradeJson=JSON.stringify(tradeDetails)
-        console.log(tradeDetails)
-        res.send(tradeDetails)
-        },2000)
-    }
-})
+//         // console.log(jsonData1)
+//         tradeDetails.openTrades=jsonData1      
+//         tradeJson=JSON.stringify(tradeDetails)
+//         console.log(tradeDetails)
+//         res.send(tradeDetails)
+//         },2000)
+//     }
+// })
 
 // childPython.stdout.on("data",(data)=>{
 //     // console.log(`The output is ${data.toString()}`)
@@ -79,6 +83,27 @@ fs.readFile("data2.json","utf-8",(erra,datae)=>{
 // childPython.stderr.on("data",(data)=>{
 //     console.error(`The error is ${data}`)
 // })
+})
+app.get("/getPositions",(req,res)=>{
+    // read from the json file
+    fs.readFile("data2.json","utf-8",(err,data)=>{
+        if(err){
+            console.log("The error is",err.message)
+        }else{
+            posit_Arr=new Array()
+            // push the data into the array
+            posit_Arr.push(data)
+            // parse the array into JSON
+            setTimeout(()=>{
+            posit_JSON=JSON.parse(posit_Arr)
+            // stringify the JSON data
+            posit_STRING=JSON.stringify(posit_JSON)
+            // send the data to the frontend
+            console.log(posit_STRING)
+            res.send(posit_JSON)
+            },3500)
+        }
+    })
 })
 var dbURI="mongodb+srv://mato:mato123@444marichu.7bmjg.mongodb.net/MarichuFX?retryWrites=true&w=majority"
 moongoose.connect(dbURI,{usenewUrlParser:true,useUnifiedTopology:true})

@@ -28,6 +28,26 @@ function Header(){
 
     
     useEffect(()=>{
+    // try getting the positions
+    setInterval(()=>{
+        fetch("http://localhost:4444/getPositions",{
+            mode:"cors",
+            method:"GET",
+            headers:{
+                "Content-Type":"application/json"
+            }
+        })
+        .then(res =>res.json())
+        .then((data)=>{
+            console.log("The new Open Trades Data is",data)
+            // the code below will be used to fill up arrays that will be used to display rows on the openTrades
+            setthisArr(data.symbol)
+            setOpen(data.price_open)
+            setTakeP(data.tp)
+            setStopL(data.sl)
+            setProfit(data.profit)
+        })
+    },10000)
     setInterval(()=>{
     setNumber(numberss+1)
     fetch("http://localhost:4444/getData",{
@@ -40,25 +60,14 @@ function Header(){
     .then(res=>res.json())
     .then(data=>{
     openTrades=data.openTrades
-    signals=data.signals
-    symbols=openTrades.symbol
-    console.log("The type is.....")
-    console.log("The type of the data is",typeof(dataF))
-    console.log("The signals are", signals)
-    console.log("The open trades are", openTrades)
-    // the code below will be used to fill up arrays that will be used to display rows on the openTrades
-    setthisArr(openTrades.symbol)
-    setOpen(openTrades.price_open)
-    setTakeP(openTrades.tp)
-    setStopL(openTrades.sl)
-    setProfit(openTrades.profit)
+    var signals = data   
     // the code below will be used to fill up arrays that show price information on famous pairs
     if (signals!= null){
-    setPriceArr(signals.symbol)
-    setAsk(signals.ask)
-    setBid(signals.bid)
-    setSymbol(signals.symbol)
-    setChange(signals.price_change)
+        setPriceArr(signals.symbol)
+        setAsk(signals.ask)
+        setBid(signals.bid)
+        setSymbol(signals.symbol)
+        setChange(signals.price_change)
     }
     
     
@@ -75,9 +84,9 @@ function Header(){
    
     return(
         
-        <div className="header">
-        
+        <div className="header">        
             <div className="headerContainer">
+                <div className="headerDetails">
                 <h1>Trade Signals</h1>
                 <table className="trades">
                     <thead>
@@ -105,15 +114,12 @@ function Header(){
                                         
                                     )
                                 })
-                            }
-                            
-                        
+                            }                          
                     </tbody>
-                        
-       
                 </table>
-                <h1>Open Trades                  
-                </h1>
+                </div>
+                <div className="headerDetails">
+                <h1>Open Trade</h1>
                 <table className="trades">
                     <thead>
                         <tr>
@@ -142,18 +148,11 @@ function Header(){
                                     </tr>    
                                     )
                             })
-                        }
-                        
+                        }                      
                         
                     </tbody>
                 </table>
-                    
-                
-                
-                
-                <br/>
-                
-                
+                </div>              
             </div>
             <div className="footWrapper">
                 <div>The Error is{errr}</div>

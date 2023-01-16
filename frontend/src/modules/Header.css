@@ -25,7 +25,16 @@ td{
     gap:30px;
     width: 100%;
     margin: 20px;
-    flex-direction: column;
+    justify-content: space-between;
+}
+.headerDetails{
+    padding: 20px 25px;
+    margin: 15px 20px;
+    gap: 30px;
+}
+.headerDetails h1{
+    text-align: center;
+    padding: 15px;
 }
 .trades{
     margin-left: 20px;
