@@ -14,9 +14,7 @@ td{
 }
 .header{
     width: 100%;
-    max-width: 1024px;
-    
-    justify-content: center;
+    /* max-width: 1024px; */
 }
 .headerContainer{
     margin: 20px;
@@ -41,5 +39,11 @@ td{
 }
 .footWrapper{
     margin: 50px;
+}
+.backgroundImage{
+    background-image: url("./images/fx.webp");
+    height: 200px;
+    width: 100%;
+    object-fit: cover;
 }
 

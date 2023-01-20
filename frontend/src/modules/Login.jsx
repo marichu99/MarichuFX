@@ -80,9 +80,7 @@ function Login(){
             <input type="email" id="email" placeholder="Enter your Email address" name="email" required className="input-box" onChange={(e)=>setFname(e.target.value)}/><br/>
             <input type="password" id="password" placeholder="Enter your password" name="password" required className="input-box" onChange={(e)=>setEmail(e.target.value)}/><br/>
             <input type="submit" id="submit" className="btn-submit" onClick={()=>{logon()}}/><br/>
-               <a href="/signup.html">Don't have an account?</a><br/>
-               <a href="/sadmin">Admin</a>
-               <a href="/forget">Forgot Password</a><br/>
+               
            </form>
             <form id="signup" className="input-group" ref={signupp} onSubmit={()=>false} method="POST">
             <input type="text" id="first" placeholder="Enter your First Name" name="fname" className="input-box" required onChange={(e)=>setFname(e.target.value)}/><br/>
@@ -90,7 +88,6 @@ function Login(){
             <input type="email" id="email" placeholder="Enter your Email address" name="email" required className="input-box" onChange={(e)=>setEmail(e.target.value)}/><br/>
             <input type="password" id="password" placeholder="Enter your password" name="password" required className="input-box" onChange={(e)=>setPassword(e.target.value)}/><br/>
             <input type="submit" id="submit" className="btn-submit" onClick={()=>{submit()}}/><br/>
-            <a href="/index">Already have an account</a> <br/>   
             <button onClick={console.log(details)}>Click me</button>       
             </form>           
         </div>   

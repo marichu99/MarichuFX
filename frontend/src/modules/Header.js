@@ -37,7 +37,8 @@ function Header(){
                 "Content-Type":"application/json"
             }
         })
-        .then(res =>res.json())
+        .then(res => res.json()
+        )
         .then((data)=>{
             console.log("The new Open Trades Data is",data)
             // the code below will be used to fill up arrays that will be used to display rows on the openTrades
@@ -85,8 +86,10 @@ function Header(){
     return(
         
         <div className="header">        
+            <div className="backgroundImage"></div>
             <div className="headerContainer">
                 <div className="headerDetails">
+                    
                 <h1>Trade Signals</h1>
                 <table className="trades">
                     <thead>
