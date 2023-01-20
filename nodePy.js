@@ -10,6 +10,13 @@ dotenv.config()
 const {spawn} =require("child_process")
 const bcrypt= require("bcrypt")
 const router = express.Router()
+// initializing web sockets
+const io = require("socket.io")(7777,{
+    cors:{
+        origin:"*"
+    }
+})
+
 
 
 // const getData= require("./modules/getData")
@@ -24,93 +31,16 @@ app.get("/",(req,res)=>{
     res.redirect("http://localhost:3000")
 })
 
-app.get('/getData',(req,res)=>{
+
+// THE CODE BELOW SHOWS HANDLING OF CONNECTION TO THE DATABASE AND LISTENING TO PORT 4444
 
 
-
-
-fs.readFile("data3.json","utf-8",(err,data)=>{
-    if(err){
-        console.log(err.message)
-    }else{
-        // create an array for the currency pairs
-        var pair_Arr= new Array()
-        // push the data to the created array
-        setTimeout(() => {
-        pair_Arr.push(data)
-        // parse the array of objects into JSON
-        pair_JSON=JSON.parse(pair_Arr)
-        // stringify the JSON
-        pair_STRING=JSON.stringify(pair_JSON)
-        console.log(pair_JSON)
-        res.send(pair_STRING)
-        }, 2000);
-
-    }
-})
-// fs.readFile("data2.json","utf-8",(erra,datae)=>{
-//     if(erra){
-//         console.log("The error is ",erra.message)
-//     }else{
-//         var dataAtrr= new Array()
-//         dataAtrr.push(datae)
-//         // console.log(dataAtrr)
-//         setTimeout(()=>{
-//         var jsonData1=JSON.parse(dataAtrr)     
-        
-//         // console.log(jsonData1)
-//         tradeDetails.openTrades=jsonData1      
-//         tradeJson=JSON.stringify(tradeDetails)
-//         console.log(tradeDetails)
-//         res.send(tradeDetails)
-//         },2000)
-//     }
-// })
-
-// childPython.stdout.on("data",(data)=>{
-//     // console.log(`The output is ${data.toString()}`)
-//     // // parse the data
-//     // var thsiStr= data.toString()
-//     // // pass the data into json
-//     // var jsonAted= JSON.parse(thsiStr)
-
-//     // console.log(jsonAted)
-//     // var jsonArr=[jsonAted]
-    
-    
-  
-// })
-// childPython.stderr.on("data",(data)=>{
-//     console.error(`The error is ${data}`)
-// })
-})
-app.get("/getPositions",(req,res)=>{
-    // read from the json file
-    fs.readFile("data2.json","utf-8",(err,data)=>{
-        if(err){
-            console.log("The error is",err.message)
-        }else{
-            posit_Arr=new Array()
-            // push the data into the array
-            posit_Arr.push(data)
-            // parse the array into JSON
-            setTimeout(()=>{
-            posit_JSON=JSON.parse(posit_Arr)
-            // stringify the JSON data
-            posit_STRING=JSON.stringify(posit_JSON)
-            // send the data to the frontend
-            console.log(posit_STRING)
-            res.send(posit_JSON)
-            },3500)
-        }
-    })
-})
 var dbURI="mongodb+srv://mato:mato123@444marichu.7bmjg.mongodb.net/MarichuFX?retryWrites=true&w=majority"
 moongoose.connect(dbURI,{usenewUrlParser:true,useUnifiedTopology:true})
 .then((result)=>{
     if(result){
         console.log("DB Connection successful")
-        app.listen(4444,(req,res)=>{    
+        const server= app.listen(4444,(req,res)=>{    
             console.log("We are currently listening on server 4444")    
         })
     }
@@ -128,6 +58,104 @@ moongoose.connect(dbURI,{usenewUrlParser:true,useUnifiedTopology:true})
 .catch((err)=>{
     console.log(err.message)
 })
+
+
+
+// THE CODE BELOW SHOWS HANDLING OF ENDPOINT REQUESTS
+
+const totalData={
+    chart: new Object(),
+    open: new Object()
+}
+io.on("connection",socket=>{
+    setInterval(()=>{
+    // console.log(socket.id)
+    fs.readFile("data3.json","utf-8",(err,data)=>{
+        if(err){
+            console.log(err.message)
+        }else{
+            // create an array for the currency pairs
+            var pair_Arr= new Array()
+            // push the data to the created array
+            pair_Arr.push(data)
+            setTimeout(() => {
+            // parse the array of objects into JSON
+            pair_JSON=JSON.parse(pair_Arr)
+            // stringify the JSON
+            pair_STRING=JSON.stringify(pair_JSON)
+            console.log(pair_JSON)
+            totalData.chart=pair_JSON
+            }, 3500);    
+        }
+    })
+        // read from the json file
+        fs.readFile("data2.json","utf-8",(err,data)=>{
+            if(err){
+                console.log("The error is",err.message)
+            }else{
+                posit_Arr=new Array()
+                // push the data into the array
+                posit_Arr.push(data)
+                // parse the array into JSON
+                setTimeout(()=>{
+                posit_JSON=JSON.parse(posit_Arr)
+                // stringify the JSON data
+                posit_STRING=JSON.stringify(posit_JSON)
+                // send the data to the frontend
+                console.log(posit_STRING)
+                totalData.open=posit_JSON
+                },2000)
+                socket.emit("chart-data",totalData)
+            }
+        })
+    },8000)
+})
+
+// app.get('/getData',(req,res)=>{
+
+// fs.readFile("data3.json","utf-8",(err,data)=>{
+//     if(err){
+//         console.log(err.message)
+//     }else{
+//         // create an array for the currency pairs
+//         var pair_Arr= new Array()
+//         // push the data to the created array
+//         setTimeout(() => {
+//         pair_Arr.push(data)
+//         // parse the array of objects into JSON
+//         pair_JSON=JSON.parse(pair_Arr)
+//         // stringify the JSON
+//         pair_STRING=JSON.stringify(pair_JSON)
+//         console.log(pair_JSON)
+//         res.send(pair_STRING)
+//         }, 2000);
+
+//     }
+// })
+
+// })
+// app.get("/getPositions",(req,res)=>{
+//     // read from the json file
+//     fs.readFile("data2.json","utf-8",(err,data)=>{
+//         if(err){
+//             console.log("The error is",err.message)
+//         }else{
+//             posit_Arr=new Array()
+//             // push the data into the array
+//             posit_Arr.push(data)
+//             // parse the array into JSON
+//             setTimeout(()=>{
+//             posit_JSON=JSON.parse(posit_Arr)
+//             // stringify the JSON data
+//             posit_STRING=JSON.stringify(posit_JSON)
+//             // send the data to the frontend
+//             console.log(posit_STRING)
+//             res.send(posit_JSON)
+//             },3500)
+//         }
+//     })
+// })
+
 app.post("/logon",async(req,res)=>{
     console.log("The request object is", req.body)
     var email= req.body.email
