@@ -28,7 +28,7 @@ app.use(cors())
 // app.use("/getData",getData)
 
 app.get("/",(req,res)=>{
-    res.redirect("http://localhost:3000")
+    res.redirect("ws://localhost:3000")
 })
 
 
@@ -68,93 +68,55 @@ const totalData={
     open: new Object()
 }
 io.on("connection",socket=>{
-    setInterval(()=>{
-    // console.log(socket.id)
-    fs.readFile("data3.json","utf-8",(err,data)=>{
-        if(err){
-            console.log(err.message)
-        }else{
-            // create an array for the currency pairs
-            var pair_Arr= new Array()
-            // push the data to the created array
-            pair_Arr.push(data)
-            setTimeout(() => {
-            // parse the array of objects into JSON
-            pair_JSON=JSON.parse(pair_Arr)
-            // stringify the JSON
-            pair_STRING=JSON.stringify(pair_JSON)
-            console.log(pair_JSON)
-            totalData.chart=pair_JSON
-            }, 3500);    
-        }
-    })
-        // read from the json file
-        fs.readFile("data2.json","utf-8",(err,data)=>{
+        // console.log(socket.id)
+
+        //everytime the frontend requests for market data
+        socket.on("get-data",()=>{ 
+        fs.readFile("data3.json","utf-8",(err,data)=>{
             if(err){
-                console.log("The error is",err.message)
+                console.log(err.message)
             }else{
-                posit_Arr=new Array()
-                // push the data into the array
-                posit_Arr.push(data)
-                // parse the array into JSON
-                setTimeout(()=>{
-                posit_JSON=JSON.parse(posit_Arr)
-                // stringify the JSON data
-                posit_STRING=JSON.stringify(posit_JSON)
-                // send the data to the frontend
-                console.log(posit_STRING)
-                totalData.open=posit_JSON
-                },2000)
-                socket.emit("chart-data",totalData)
+                // create an array for the currency pairs
+                var pair_Arr= new Array()
+                // push the data to the created array
+                pair_Arr.push(data)
+                setTimeout(() => {
+                // parse the array of objects into JSON
+                pair_JSON=JSON.parse(pair_Arr)
+                // stringify the JSON
+                pair_STRING=JSON.stringify(pair_JSON)
+                console.log(pair_JSON)
+                totalData.chart=pair_JSON
+                }, 3500);    
             }
         })
-    },8000)
-})
+            // read from the json file
+            fs.readFile("data2.json","utf-8",(err,data)=>{
+                if(err){
+                    console.log("The error is",err.message)
+                }else{
+                    posit_Arr=new Array()
+                    // push the data into the array
+                    posit_Arr.push(data)
+                    // parse the array into JSON
+                    setTimeout(()=>{
+                    posit_JSON=JSON.parse(posit_Arr)
+                    // stringify the JSON data
+                    posit_STRING=JSON.stringify(posit_JSON)
+                    // send the data to the frontend
+                    console.log(posit_JSON)
+                    totalData.open=posit_JSON
+                    },2000)
+                    socket.emit("chart-data",totalData)
+                }
+            })    
+        })
+    })
 
-// app.get('/getData',(req,res)=>{
 
-// fs.readFile("data3.json","utf-8",(err,data)=>{
-//     if(err){
-//         console.log(err.message)
-//     }else{
-//         // create an array for the currency pairs
-//         var pair_Arr= new Array()
-//         // push the data to the created array
-//         setTimeout(() => {
-//         pair_Arr.push(data)
-//         // parse the array of objects into JSON
-//         pair_JSON=JSON.parse(pair_Arr)
-//         // stringify the JSON
-//         pair_STRING=JSON.stringify(pair_JSON)
-//         console.log(pair_JSON)
-//         res.send(pair_STRING)
-//         }, 2000);
+  
 
-//     }
-// })
 
-// })
-// app.get("/getPositions",(req,res)=>{
-//     // read from the json file
-//     fs.readFile("data2.json","utf-8",(err,data)=>{
-//         if(err){
-//             console.log("The error is",err.message)
-//         }else{
-//             posit_Arr=new Array()
-//             // push the data into the array
-//             posit_Arr.push(data)
-//             // parse the array into JSON
-//             setTimeout(()=>{
-//             posit_JSON=JSON.parse(posit_Arr)
-//             // stringify the JSON data
-//             posit_STRING=JSON.stringify(posit_JSON)
-//             // send the data to the frontend
-//             console.log(posit_STRING)
-//             res.send(posit_JSON)
-//             },3500)
-//         }
-//     })
-// })
 
 app.post("/logon",async(req,res)=>{
     console.log("The request object is", req.body)
