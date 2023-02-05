@@ -67,59 +67,10 @@ function Header(){
         setChange(signals.price_change)
         }
     }
-    // try getting the positions
-    // setInterval(()=>{
-        
-    //     fetch("http://localhost:4444/getPositions",{
-    //         mode:"cors",
-    //         method:"GET",
-    //         headers:{
-    //             "Content-Type":"application/json"
-    //         }
-    //     })
-    //     .then(res => res.json()
-    //     )
-    //     .then((data)=>{
-    //         console.log("The new Open Trades Data is",data)
-    //         // the code below will be used to fill up arrays that will be used to display rows on the openTrades
-    //         setthisArr(data.symbol)
-    //         setOpen(data.price_open)
-    //         setTakeP(data.tp)
-    //         setStopL(data.sl)
-    //         setProfit(data.profit)
-    //     })
-    // },10000)
+    // this setInterval is used to control the renders of the screen
     setInterval(()=>{
     setNumber(numberss+1)
-    // fetch("http://localhost:4444/getData",{
-    //     method:"GET",
-    //     mode:"cors",
-    //     Headers:{
-    //         "Content-Type":"application/json"
-    //     }
-    // })
-    // .then(res=>res.json())
-    // .then(data=>{
-    // openTrades=data.openTrades
-    // var signals = data   
-    // // the code below will be used to fill up arrays that show price information on famous pairs
-    // if (signals!= null){
-    //     setPriceArr(signals.symbol)
-    //     setAsk(signals.ask)
-    //     setBid(signals.bid)
-    //     setSymbol(signals.symbol)
-    //     setChange(signals.price_change)
-    // }
-    
-    
-    
-    // })
-    // .catch(err=>setError(err))
-    
-    // showPosTable(openTrades)
-    // console.log("the signals are", signals)
-        
-    // console.log("The openTrades are",openTrades)
+   
         },5000)
 },[numberss])
    

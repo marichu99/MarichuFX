@@ -9,6 +9,7 @@ const Chunk = require("./models/people")
 dotenv.config()
 const {spawn} =require("child_process")
 const bcrypt= require("bcrypt")
+const { isArray } = require("util")
 const router = express.Router()
 // initializing web sockets
 const io = require("socket.io")(7777,{
@@ -82,12 +83,14 @@ io.on("connection",socket=>{
                 pair_Arr.push(data)
                 setTimeout(() => {
                 // parse the array of objects into JSON
+                if(isArray(pair_Arr)){
                 pair_JSON=JSON.parse(pair_Arr)
+                }
                 // stringify the JSON
                 pair_STRING=JSON.stringify(pair_JSON)
                 console.log(pair_JSON)
                 totalData.chart=pair_JSON
-                }, 3500);    
+                }, 6000);    
             }
         })
             // read from the json file

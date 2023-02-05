@@ -9,6 +9,8 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@fortawesome/free-solid-svg-icons": "^6.2.1",
+    "@fortawesome/react-fontawesome": "^0.2.0",
     "bcrypt": "^5.1.0",
     "child-process": "^1.0.2",
     "cors": "^2.8.5",
