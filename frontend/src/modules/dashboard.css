@@ -1,10 +1,4 @@
-body{
-    
-    background-color: aliceblue;
-    display:flex;
-    justify-content:space-between;
-    flex-direction: row;
-}
+
 .navlets{
     display: flex;
     flex-direction: row;

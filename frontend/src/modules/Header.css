@@ -15,24 +15,25 @@ td{
 .header{
     width: 100%;
     /* max-width: 1024px; */
+    
+    justify-content: center;
 }
 .headerContainer{
-    margin: 20px;
-    align-items: center;
-    display: flex;
-    gap:30px;
     width: 100%;
-    margin: 20px;
-    justify-content: space-between;
+    height: 75vh;
+    background: linear-gradient(rgba(0,0,0,0.4),rgba(0,0,0,0.75)),url("images/finance.jpg");
+    background-size: cover;
+    background-position: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
-.headerDetails{
-    padding: 20px 25px;
-    margin: 15px 20px;
-    gap: 30px;
-}
-.headerDetails h1{
+.spanWelcome{
     text-align: center;
-    padding: 15px;
+    color: aliceblue;
+    font-size: large;
+    font-family: 'Times New Roman', Times, serif;
+
 }
 .trades{
     margin-left: 20px;
@@ -40,10 +41,85 @@ td{
 .footWrapper{
     margin: 50px;
 }
-.backgroundImage{
-    background-image: url("./images/fx.webp");
-    height: 200px;
-    width: 100%;
-    object-fit: cover;
+.packagez{
+    display: flex;
+    justify-content: space-between;
+    margin-top: 50px;
+    padding: 2px;
+    margin-left: 20px;    
+    margin-right: 20px;
+    margin-bottom: 70px;
 }
+.packages{
+    display: flex;
+    justify-content: space-between;
+    margin-top: 50px;
+    padding: 2px;
+    margin-left: 120px;    
+    margin-right: 120px;
+    margin-bottom: 70px;
+}
+.package{
+    display: flex;
+    justify-content: center;
+    flex-direction: column;
+    height: 350px;
+    width: 280px;
+    background-color: aliceblue;
+    border-radius: 25px;
+    transition: transform .5s;
+    padding: 10px 14px;
+    gap: 20px;
+}
+.package:hover{
+    transform: scale(1.1);
+}
+.packName{
+    font-size: 20px;
+    font-family: 'Times New Roman', Times, serif;
+    text-align: center;
+    padding: 8px;
+    margin: 15px;
+    text-transform: uppercase;
+    color: rgb(18, 18, 39);
+}
+.package p{
+    font-family: Arial, Helvetica, sans-serif;
+    padding: 5px 10px;
+    margin: 12px;
+}
+.buttonBuy{
+    width: 30%;
+    background-color: rgb(252, 130, 130);
+    height: 34px;
+    text-transform: uppercase;
+    transition: transform .5s;
+    margin-left: 180px;
+    text-align: center;
+    border-radius: 10px;
+    border: none;
+    outline: none;
+    align-items: flex-end;
+}
+.buttonBuy:hover{
+    background-color: rgb(252, 64, 64);
+    transform: scale(1.1);
+}
+.request{
+    flex-direction: column;
+}
+.prerequisite{
+    margin-top: 30px;    
+}
+.yeah{
+    flex-direction: column;
+}
+.yeah h2{
+    padding: 10px 14px;
+    margin: 15px;
+}
+.yeah p{
+    margin: 15px;
+}
+
 

@@ -2,6 +2,8 @@ import "./dashboard.css"
 import { faHome, faLineChart, faArrowCircleUp, faAmbulance, faSuitcase, faSignOut } from "@fortawesome/free-solid-svg-icons";
 import { FontAwesomeIcon } from "@fortawesome/react-fontawesome";
 import React,{useState,useEffect} from "react";
+import {useNavigate} from "react-router-dom";
+
 
 import { io } from "socket.io-client"
 
@@ -17,6 +19,8 @@ socket.on("connect",()=>{
 
 
 function Dashboard(){
+    var navigate=useNavigate();
+
     const[errr,setError]=useState(null)
     const [tb_data,setTbdata] =useState(new Object())
     var [rows,setRows]=useState(new Array())
@@ -31,6 +35,9 @@ function Dashboard(){
     const [bid,setBid]=useState(new Array())
     const [symbol,setSymbol]= useState(new Array())
     const [change,setChange]= useState(new Array())
+    function getHome(){
+        navigate("/")
+    }
     
     const[numberss,setNumber]=useState(0)
     useEffect(()=>{
@@ -82,7 +89,7 @@ function Dashboard(){
 
             <div className="navContainer">
                 <div className="logoName">
-                    <span className="logo_name">MarichuFX</span>
+                    <span className="logo_name" onClick={()=>{getHome()}}>MarichuFX</span>
                 </div>
                 <div className="menu-items">
                     <ul className="nav-links">

@@ -17,6 +17,8 @@ const io = require("socket.io")(7777,{
         origin:"*"
     }
 })
+// stripe 
+const stripe=require("stripe")(process.env.STRIPE_PRIIVATE_KEY)
 
 
 
@@ -29,7 +31,7 @@ app.use(cors())
 // app.use("/getData",getData)
 
 app.get("/",(req,res)=>{
-    res.redirect("ws://localhost:3000")
+    res.redirect("http://localhost:3000/dash")
 })
 
 
@@ -115,11 +117,6 @@ io.on("connection",socket=>{
             })    
         })
     })
-
-
-  
-
-
 
 app.post("/logon",async(req,res)=>{
     console.log("The request object is", req.body)

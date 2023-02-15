@@ -1,158 +1,83 @@
 import "./Header.css"
 import React,{useState,useEffect} from "react";
-import DataTable from "./DataTable";
-import DisplayTable from "./displayTable";
-import { io } from "socket.io-client"
+import {useNavigate} from "react-router-dom"
 
-var signals =new Array()
-var openTrades= new Object()
-var symbols =[]
 
-const socket = io("ws://localhost:7777")
- 
-socket.on("connect",()=>{
-    console.log("We are connected with ",socket.id)
-})
 
-function Header(){
-    const[errr,setError]=useState(null)
-    const [tb_data,setTbdata] =useState(new Object())
-    var [rows,setRows]=useState(new Array())
-    var [thisArr,setthisArr]=useState(new Array())
-    const [open,setOpen] =useState(new Array())
-    const [takeP,setTakeP]=useState(new Array())
-    const [stopL,setStopL]=useState(new Array())
-    const [profit,setProfit]=useState(new Array())
-    
-    const [price_arr,setPriceArr]=useState(new Array())
-    const [ask,setAsk]=useState(new Array())
-    const [bid,setBid]=useState(new Array())
-    const [symbol,setSymbol]= useState(new Array())
-    const [change,setChange]= useState(new Array())
-    
-    const[numberss,setNumber]=useState(0)
-    useEffect(()=>{
-        socket.emit("get-data",()=>{
-            console.log("We have sent out a data request")
-        })
-        socket.on("chart-data",(data)=>{
-            setTbdata(data)
-        })
-        
-        console.log(tb_data)
-        if(typeof(tb_data.open) === undefined){
-            console.log("The undefined open Trades are", tb_data.open)            
-        }else{
-            if (numberss >2){
-            console.log('The open trades are',tb_data.open)
-            setthisArr(tb_data.open.symbol)
-            setOpen(tb_data.open.price_open)
-            setTakeP(tb_data.open.tp)
-            setStopL(tb_data.open.sl)
-            setProfit(tb_data.open.profit)
-            }
-        }
-    // the code below will be used to fill up arrays that show price information on famous pairs
-    var signals = tb_data.chart   
-    if (typeof(signals) === null){
-        console.log("The undefined signals are",signals)
-        
-    }else{
-        if(numberss >2){
-        console.log("The signals are",signals)
-        setPriceArr(signals.symbol)
-        setAsk(signals.ask)
-        setBid(signals.bid)
-        setSymbol(signals.symbol)
-        setChange(signals.price_change)
+function Header(){   
+    var navigate=useNavigate();
+
+
+    function getResource(type){
+        if(type === "basics"){
+            window.location.href="https://www.youtube.com/watch?v=6uczHdXeC8A&ab_channel=CitizenTVKenya"
+        } else if (type === "getAccount"){
+            window.location.href="https://www.forexbrokers.com/guides/metatrader-review"
+        } else if (type === "connect"){
+            window.location.href="http://localhost:3000/login"
+        } else if (type === "kenya"){
+            window.location.href="https://www1.fxpesa.com/mt5"
         }
     }
-    // this setInterval is used to control the renders of the screen
-    setInterval(()=>{
-    setNumber(numberss+1)
-   
-        },5000)
-},[numberss])
-   
+
     return(
         
-        <div className="header">        
-            <div className="backgroundImage"></div>
+        <div className="header">
             <div className="headerContainer">
-                <div className="headerDetails">
-                    
-                <h1>Trade Signals</h1>
-                <table className="trades">
-                    <thead>
-                        <tr>
-                            <td>ID</td>
-                            <td>Symbol</td>
-                            <td>Ask</td>
-                            <td>Bid</td>
-                            <td>Change</td>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        
-                            {/* {tb_data}                             */}
-                            {
-                                price_arr.map((item,r)=>{
-                                    return(
-                                        <tr key={r}>
-                                            <td>{r}</td>
-                                            <td>{symbol[r]}</td>
-                                            <td>{ask[r]}</td>
-                                            <td>{bid[r]}</td>
-                                            <td>{change[r]}</td>
-                                        </tr>
-                                        
-                                    )
-                                })
-                            }                          
-                    </tbody>
-                </table>
+                <span className="spanWelcome">Welcome to MarichuFX, <br/>where all your forex needs are turned to reality</span>
+                <img src="images/finance.jpg" alt=""/>
+            </div> 
+        
+            
+                <div className="yeah">
+                    <h2 className="request">We advise and encourage all our clients to get started with Demo Accounts from Forex brokers first </h2>
+                    <p className="requestP">It is rather advisable to test our system using demo accounts to gain trust in the effectiveness of the Trading Bot.</p>
+                    <p className="requestP"> Our Forex Bot uses MetaTrader 5 to initiate trades in the backend, so its advisable to have a MetaTrader account With a reputable broker abinitio, but not to worry, the section below will provide steps to be taken in order to get upto speed with the Bot Registration Process</p>
                 </div>
-                <div className="headerDetails">
-                <h1>Open Trade</h1>
-                <table className="trades">
-                    <thead>
-                        <tr>
-                           <td>ID</td>
-                           <td>symbol</td>
-                           <td>open</td>
-                           <td>takeProfit</td>
-                           <td>stopLoss</td> 
-                           <td>p/l</td>
-                           
-                        </tr>
-                    </thead>
-                    <tbody>                      
-                        
-                        { 
-                            
-                                thisArr.map((item,r)=>{
-                                    return (
-                                    <tr key={r}>      
-                                        <td>{r}</td>                      
-                                        <td>{item}</td>
-                                        <td>{open[r]}</td>
-                                        <td>{takeP[r]}</td>
-                                        <td>{stopL[r]}</td>
-                                        <td>{profit[r]}</td>                
-                                    </tr>    
-                                    )
-                            })
-                        }                      
-                        
-                    </tbody>
-                </table>
-                </div>              
+            <div className="packagez">
+                <div className="package">
+                    <span className="desc">Are you new to MetaTrader 5 and Forex Trading ?</span>
+                    <p>If you are new to forex trading, click the button below to get to a useful resource that may proove useful in teaching the basics of forex</p>
+                    <button className="buttonBuy" onClick={()=>{getResource("basics")}}>Basics</button>
+                </div>
+                <div className="package">
+                    <span className="desc">Do you have some knowledge in Forex and would like to have a MetaTrader 5 Account </span>
+                    <p>If you have knowledge on Forex but you do not have a MetaTrader 5 account, the button below shows a list of reputable brokers that would get you started with a MetaTrader 5 account</p>
+                    <button className="buttonBuy" onClick={()=>{getResource("getAccount")}}>Open Account</button>                    
+                </div>
+                <div className="package">
+                    <span className="desc">Do you Already have a MetaTrader 5 Broker's Account ?</span>
+                    <p>If you already have a MetaTrader 5 Forex brokers account Kindly Click the button below to connect to our bot.</p>
+                    <button className="buttonBuy" onClick={()=>{getResource("connect")}}>Connect</button>                    
+                </div>
+                <div className="package">
+                    <span className="desc">Are you interested in opening a MetaTrader 5 Broker's account and reside in Kenya or East Africa </span>
+                    <p>In addition, if you come from Kenya and would want to open a MetaTrader 5 forex account the button belows redirect to a reputable broker from Kenya</p>
+                    <button className="buttonBuy" onClick={()=>{getResource("kenya")}}>Connect to Bot
+                    </button>
+                </div>
+            </div>     
+            <div className="yeah">
+            <h2>Below are some of our Forex Packages</h2>
             </div>
-            <div className="footWrapper">
-                <div>The Error is{errr}</div>
-                <button >Get Data</button>
-                <div>{numberss}</div>
+            <div className="packages">
+                <div className="package">
+                    <span className="packName">Basic Package</span>
+                    <p>This Package uses basic technical analysis tools to effect forex trades</p>
+                    <button className="buttonBuy">Buy</button>
+                </div>
+                <div className="package">
+                    <span className="packName">Premium Package</span>
+                    <p>This package ensembles various technical analysis tool for trade analysis and execution</p>
+                    <button className="buttonBuy">Buy</button>
+                </div>
+                <div className="package">
+                    <span className="packName">Gold Package</span>
+                    <p>This package uses Artificial Intelligence to collect data and performs drill down analysis, then comes up with trades using deductive reasoning and logic</p>
+                    <button className="buttonBuy">Buy</button>
+                </div>
             </div>
+                
         </div>
     );
 }

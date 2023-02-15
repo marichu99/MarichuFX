@@ -1,5 +1,7 @@
 import React from "react";
+import Footer from "./footer";
 import Header from "./Header";
+import MailList from "./mailList";
 import Navbar from "./Navbar";
 
 function Home(){
@@ -8,6 +10,8 @@ function Home(){
     
         <Navbar/>
         <Header/>
+        <MailList/>
+        <Footer/>
     
         </div>
     )
