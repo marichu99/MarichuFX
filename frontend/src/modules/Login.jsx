@@ -73,23 +73,29 @@ function Login(){
         <div className="login">
             <div className="button-box">
               <div id="buttonz" ref={buttonz}></div>
-              <button className="toggle-btn" onClick={()=>login()}>Login</button>
-              <button className="toggle-btn" onClick={()=>signup()}>Signup</button>
-        </div>
-           <form id="login" className="input-group" ref={loginn} onSubmit={()=>false} method="POST" action="http://localhost:4444/logon">
-            <input type="email" id="email" placeholder="Enter your Email address" name="email" required className="input-box" onChange={(e)=>setFname(e.target.value)}/><br/>
-            <input type="password" id="password" placeholder="Enter your password" name="password" required className="input-box" onChange={(e)=>setEmail(e.target.value)}/><br/>
-            <input type="submit" id="submit" className="btn-submit" onClick={()=>{logon()}}/><br/>
-               
-           </form>
-            <form id="signup" className="input-group" ref={signupp} onSubmit={()=>false} method="POST">
-            <input type="text" id="first" placeholder="Enter your First Name" name="fname" className="input-box" required onChange={(e)=>setFname(e.target.value)}/><br/>
-            <input type="text" id="last" placeholder="Enter your Last Name" name="lname" required className="input-box" onChange={(e)=>setLname(e.target.value)}/><br/>
-            <input type="email" id="email" placeholder="Enter your Email address" name="email" required className="input-box" onChange={(e)=>setEmail(e.target.value)}/><br/>
-            <input type="password" id="password" placeholder="Enter your password" name="password" required className="input-box" onChange={(e)=>setPassword(e.target.value)}/><br/>
-            <input type="submit" id="submit" className="btn-submit" onClick={()=>{submit()}}/><br/>
-            <button onClick={console.log(details)}>Click me</button>       
-            </form>           
+                <button className="toggle-btn" onClick={()=>login()}>Login</button>
+                <button className="toggle-btn" onClick={()=>signup()}>Signup</button>
+              </div>
+              <form id="login" className="input-group" ref={loginn} onSubmit={()=>false} method="POST" action="http://localhost:4444/logon">
+                <div className="input-field">
+                <label>First Name:</label>
+                <input type="email" id="email" placeholder="Enter your Email address" name="email" required className="input-box" onChange={(e)=>setFname(e.target.value)}/><br/>
+                </div>
+                <div className="input-field">
+                <label>Password:</label>              
+                <input type="password" id="password" placeholder="Enter your password" name="password" required className="input-box" onChange={(e)=>setEmail(e.target.value)}/><br/>
+                </div>
+                <input type="submit" id="submit" className="btn-submit" onClick={()=>{logon()}}/><br/>
+                  
+              </form>
+              <form id="signup" className="input-group" ref={signupp} onSubmit={()=>false} method="POST">
+              <input type="text" id="first" placeholder="Enter your First Name" name="fname" className="input-box" required onChange={(e)=>setFname(e.target.value)}/><br/>
+              <input type="text" id="last" placeholder="Enter your Last Name" name="lname" required className="input-box" onChange={(e)=>setLname(e.target.value)}/><br/>
+              <input type="email" id="email" placeholder="Enter your Email address" name="email" required className="input-box" onChange={(e)=>setEmail(e.target.value)}/><br/>
+              <input type="password" id="password" placeholder="Enter your password" name="password" required className="input-box" onChange={(e)=>setPassword(e.target.value)}/><br/>
+              <input type="submit" id="submit" className="btn-submit" onClick={()=>{submit()}}/><br/>
+              <button onClick={console.log(details)}>Click me</button>       
+              </form>           
         </div>   
       </div>
     )

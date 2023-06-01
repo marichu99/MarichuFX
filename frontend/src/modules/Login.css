@@ -50,7 +50,6 @@ body .marichu{
   padding: 20px;
   border-radius: 10px;
   /* margin: 30px 20px; */
-  text-align: center;
   position: relative;
   background: #fff;
   overflow: hidden;
@@ -94,7 +93,15 @@ a:hover{
 .input-group{
     top:130px;
     position: absolute;
-    width: 280px;
+    width: 80%;
     transition: .5s;
     margin-left: 20px;
+    display: flex;
+    flex-direction: column;
+}
+/* css for the input fields */
+.input-field{
+    display: flex;
+    flex-direction: column;
+    flex-basis: start;
 }

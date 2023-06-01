@@ -116,8 +116,7 @@ io.on("connection",socket=>{
                 }
             })    
         })
-    })
-
+})
 app.post("/logon",async(req,res)=>{
     console.log("The request object is", req.body)
     var email= req.body.email

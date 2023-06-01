@@ -29,7 +29,7 @@ function Header(){
             </div> 
         
             
-                <div className="yeah">
+                <div className="topiContainer">
                     <h2 className="request">We advise and encourage all our clients to get started with Demo Accounts from Forex brokers first </h2>
                     <p className="requestP">It is rather advisable to test our system using demo accounts to gain trust in the effectiveness of the Trading Bot.</p>
                     <p className="requestP"> Our Forex Bot uses MetaTrader 5 to initiate trades in the backend, so its advisable to have a MetaTrader account With a reputable broker abinitio, but not to worry, the section below will provide steps to be taken in order to get upto speed with the Bot Registration Process</p>
@@ -57,7 +57,7 @@ function Header(){
                     </button>
                 </div>
             </div>     
-            <div className="yeah">
+            <div className="forexPackages">
             <h2>Below are some of our Forex Packages</h2>
             </div>
             <div className="packages">
