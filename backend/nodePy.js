@@ -63,22 +63,6 @@ fs.readFile("data2.json","utf-8",(erra,datae)=>{
     }
 })
 
-// childPython.stdout.on("data",(data)=>{
-//     // console.log(`The output is ${data.toString()}`)
-//     // // parse the data
-//     // var thsiStr= data.toString()
-//     // // pass the data into json
-//     // var jsonAted= JSON.parse(thsiStr)
-
-//     // console.log(jsonAted)
-//     // var jsonArr=[jsonAted]
-    
-    
-  
-// })
-// childPython.stderr.on("data",(data)=>{
-//     console.error(`The error is ${data}`)
-// })
 })
 var dbURI="mongodb+srv://mato:mato123@444marichu.7bmjg.mongodb.net/MarichuFX?retryWrites=true&w=majority"
 moongoose.connect(dbURI,{usenewUrlParser:true,useUnifiedTopology:true})

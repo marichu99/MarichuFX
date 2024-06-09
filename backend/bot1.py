@@ -11,6 +11,7 @@ import json
 SYMBOL = ["XAUUSD","EURUSD","USDCAD","USDJPY","AUDCAD","GBPUSD","GBPJPY","EURJPY"]
 TIMEFRAME = mt5.TIMEFRAME_M15  
 high_TIMEFRAME=[mt5.TIMEFRAME_M30,mt5.TIMEFRAME_M15,mt5.TIMEFRAME_H1,mt5.TIMEFRAME_H4]
+lower_TIMEFRAMES=[mt5.TIMEFRAME_M1,mt5.TIMEFRAME_M5,mt5.TIMEFRAME_M15,mt5.TIMEFRAME_M30]
 VOLUME=0.1
 N=0
 AWAIT_=False
@@ -402,7 +403,6 @@ def getDivergence(highRSI,lowRSI,TIMEFRAMEs):
     highest_price=highest_price.iloc[-1]["close"]
     
     def fillDict(we,you,vecna):
-        print("The value of x is ",x)
         from_date=datetime(2022,x,v)
         to_date=datetime(2022,x,v+1)
         mbao=mt5.copy_rates_range(we,you,from_date,to_date)
@@ -678,6 +678,8 @@ def concatDF():
         dataF_arr=[]
       
 def main():    
+    print("The low timeframes are")
+    print(lower_TIMEFRAMES)
     conn()
     # strategy loop
     id=0
