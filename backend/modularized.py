@@ -115,9 +115,15 @@ def getHighLowPricesPerSplitDf(split_df,pair,timeframe):
         eurjpy_Dict[timeframe]["highPrice"].append(highClosePrice)
         eurjpy_Dict[timeframe]["lowPrice"].append(lowClosePrice)
     
-    for counter,price in enumerate(xauusd_Dict[30]["highPrice"]):
-        if(price in xauusd_Dict[30]["lowPrice"] or price in xauusd_Dict[15]["highPrice"]):
-            print("We have a point")
+    windowToWindowAnalysis(xauusd_Dict,pair)
+    
+    
+
+def windowToWindowAnalysis(price_Dict,pair):
+    # max price analysis for the same timeframe
+    for counter,price in enumerate(price_Dict[30]["highPrice"]):
+        if(price in price_Dict[15]["highPrice"] or price in price_Dict[5]["highPrice"] or price in price_Dict[1]["highPrice"]):
+            print("We have a point",price)
             
     
 
