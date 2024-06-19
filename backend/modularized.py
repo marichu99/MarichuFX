@@ -18,6 +18,8 @@ lower_TIMEFRAMES=[mt5.TIMEFRAME_M1,mt5.TIMEFRAME_M5,mt5.TIMEFRAME_M15,mt5.TIMEFR
 NUM_BARS=1000
 FSMA_PERIOD = 10 # number of periods in the fast simple moving average
 SL_SMA_PERIOD = 50 # number of periods in the slow moving average
+STANDARD_DEVIATIONS=int(2) # number of deviations for calculation of bolinger bands
+
 
 # window formation
 xauusd_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
@@ -39,6 +41,9 @@ cont_audcad_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
 cont_gbpusd_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
 cont_gbpjpy_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
 cont_eurjpy_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
+
+ema_20=[]
+ema_5=[]
 
 def conn():
     # start the connection to MT5
@@ -65,7 +70,7 @@ def conn():
 
 def gatherDataController():
     print("We are gathering the data")
-    global  er_TIMEFRAMES,high_TIMEFRAME,SYMBOLS
+    global  lower_TIMEFRAMES,high_TIMEFRAME,SYMBOLS
     for pair in SYMBOLS:
         for timeframe in  lower_TIMEFRAMES:
             backtest_data = mt5.copy_rates_from_pos(pair,timeframe,1,NUM_BARS)
@@ -80,6 +85,19 @@ def splitAndPreprocess(df,pair,timeframe):
     df= pd.DataFrame(df)
     # change the time variable
     df["time"]=pd.to_datetime(df["time"],unit="s")
+
+    df['fast_ema'] = df['Close'].ewm(span=5, adjust=False).mean()
+    df['slow_ema'] = df['Close'].ewm(span=20, adjust=False).mean()
+
+    df['prev_fast_ema'] = df['fast_ema'].shift(1)
+    df['prev_slow_ema'] = df['slow_ema'].shift(1)
+
+    df['crossover'] = np.vectorize(calculate_ema_crossover)(df['fast_ema'], df['prev_fast_ema'], df['slow_ema'], df['prev_slow_ema'])
+
+    cross_over_type=df["crossover"][-1]
+
+    # if we have a crossover then we look for support and resistance points to confirm the signal
+
     if(pair == "XAUUSD"):
         print("The size of the dataframe",df.shape[0])
         num_splits = df.shape[0]/100
@@ -145,7 +163,7 @@ def windowToWindowAnalysis(price_Dict,pair):
                 cont_xauusd_Dict["lowPrice"].append(price)
     
         # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
-        isPriceCloseToAnySweetSpot(pair)
+        # isPriceCloseToAnySweetSpot(pair)
 
 def isPriceCloseToAnySweetSpot(pair):
     while True:
@@ -155,6 +173,47 @@ def isPriceCloseToAnySweetSpot(pair):
             print("We have a price on our sweet spot")
             # if there is price on our sweet spot, then we check for other signals for entry
         time.sleep(5)
+
+# signal generating functions   
+def get_signal(TIMEFRAMEs,pair):
+    # bar data
+    bars =mt5.copy_rates_from_pos(pair,TIMEFRAMEs,1,NUM_BARS)
+    # converting to dataframe
+    df =pd.DataFrame(bars)
+    # print(f"The symbol is {J}")
+    df=df.tail(20)
+    # simple moving average
+    sma =df['close'].mean()
+    # standard deviation
+    sd =df['close'].std()
+    
+    # lower bolinger band
+    lower_band = sma -STANDARD_DEVIATIONS*sd
+    # upper bolinger band
+    upper_band = sma +STANDARD_DEVIATIONS*sd
+
+    # last close price
+    last_price =df.iloc[-1]["close"]
+
+    # print(f"The last price is {last_price} and upper band is {upper_band} and the lower band is {lower_band}")
+    # print(df)
+    # finding the signal
+    if last_price <lower_band: 
+        return 'buy',sd
+    elif last_price > upper_band:
+        return 'sell',sd
+    else: 
+        return None, None
+
+def calculate_ema_crossover(fast_ema, prev_fast_ema, slow_ema, prev_slow_ema):
+    if prev_fast_ema < prev_slow_ema and fast_ema > slow_ema:
+        return 'Golden Cross'
+    elif prev_fast_ema > prev_slow_ema and fast_ema < slow_ema:
+        return 'Death Cross'
+    else:
+        return 'No Crossover'
+
+
 # calculating the SMA
 def calculateSMA(fast_sma,prev_fast_sma,slow_sma): 
     """
