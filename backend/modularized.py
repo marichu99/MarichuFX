@@ -95,18 +95,25 @@ def splitAndPreprocess(df,pair,timeframe):
     df['crossover'] = np.vectorize(calculate_ema_crossover)(df['fast_ema'], df['prev_fast_ema'], df['slow_ema'], df['prev_slow_ema'])
 
     cross_over_type=df["crossover"][-1]
+    # after a crossover, check the rsi for confirmation
+    if(cross_over_type != "No Crossover"):
+        if(cross_over_type == "Death Cross"):
+            if(calculateRSI(df=df,TIMEFRAMEs=timeframe) == "buy"):
+                print("We have a complete buy signal")
+        elif(cross_over_type == "Golden Cross"):
+            if(calculateRSI(df=df,TIMEFRAMEs=timeframe) == "sell"):
+                print("We have a complete sell signal")
+        # if we have a crossover then we look for support and resistance points to confirm the signal
+        if(pair == "XAUUSD"):
+            num_splits = df.shape[0]/100
+            split_dfs=np.array_split(df,num_splits)
+            for i,split_df in enumerate(split_dfs):
+                getHighLowPricesPerSplitDf(split_df,pair,timeframe)
+    else:
+        print("No crossover yet")
 
-    # if we have a crossover then we look for support and resistance points to confirm the signal
 
-    if(pair == "XAUUSD"):
-        print("The size of the dataframe",df.shape[0])
-        num_splits = df.shape[0]/100
-        split_dfs=np.array_split(df,num_splits)
-        for i,split_df in enumerate(split_dfs):
-            print("The timeframe",timeframe)
-            print(f"The {i+1} dataframe is")
-            print(split_df)
-            getHighLowPricesPerSplitDf(split_df,pair,timeframe)
+    
 
 def getHighLowPricesPerSplitDf(split_df,pair,timeframe):
     split_df=pd.DataFrame(split_df)
@@ -145,8 +152,7 @@ def getHighLowPricesPerSplitDf(split_df,pair,timeframe):
         eurjpy_Dict[timeframe]["highPrice"].append(highClosePrice)
         eurjpy_Dict[timeframe]["lowPrice"].append(lowClosePrice)
     
-    windowToWindowAnalysis(xauusd_Dict,pair)
-    
+    windowToWindowAnalysis(xauusd_Dict,pair)    
     
 
 def windowToWindowAnalysis(price_Dict,pair):
@@ -154,16 +160,14 @@ def windowToWindowAnalysis(price_Dict,pair):
         # max price analysis for the same timeframe
         for counter,price in enumerate(price_Dict[30]["highPrice"]):
             if(price in price_Dict[15]["highPrice"] or price in price_Dict[5]["highPrice"] or price in price_Dict[1]["highPrice"]):
-                print("We have a high point",price)
                 cont_xauusd_Dict["highPrice"].append(price)
             
         for counter,price in enumerate(price_Dict[30]["lowPrice"]):
             if(price in price_Dict[15]["lowPrice"] or price_Dict[5]["lowPrice"] or price_Dict[1]["lowPrice"]):
-                print("We have a low point",price)            
                 cont_xauusd_Dict["lowPrice"].append(price)
     
         # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
-        # isPriceCloseToAnySweetSpot(pair)
+        isPriceCloseToAnySweetSpot(pair)
 
 def isPriceCloseToAnySweetSpot(pair):
     while True:
@@ -290,13 +294,11 @@ def calculateRSI(df,TIMEFRAMEs):
     lowRSI=pd.DataFrame(data=data)[["rd_14","close"]]
     # print("LOW RSI DATAFRAME ")
     # print(lowRSI.tail(20))
-    getDivergence(highRSI,lowRSI,TIMEFRAMEs)
+    return getDivergence(highRSI,lowRSI,TIMEFRAMEs)
 
 # get the bullish and bearish divergence
 def getDivergence(highRSI,lowRSI,TIMEFRAMEs):
-    global trade_signal
-    # print("LOW RSI")
-    # print(lowRSI)
+    trade_signal=""
 
     # HIGH PRICE
     current_high_rsi=highRSI.iloc[-1]["rd_14"]
@@ -325,6 +327,8 @@ def getDivergence(highRSI,lowRSI,TIMEFRAMEs):
          
     elif lower_side >= previous_close_low and current_low_rsi>previous_low_rsi:
         trade_signal="buy"
+
+    return trade_signal
 
     # print("The gold dictionary")
     # print(f"The {timeframe} timeframe has a maximum price of {highClosePrice} and minimum price of {lowClosePrice}")
