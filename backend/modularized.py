@@ -95,20 +95,25 @@ def splitAndPreprocess(df,pair,timeframe):
     df['crossover'] = np.vectorize(calculate_ema_crossover)(df['fast_ema'], df['prev_fast_ema'], df['slow_ema'], df['prev_slow_ema'])
 
     cross_over_type=df["crossover"][-1]
+
+    print("The crossover type is ",cross_over_type)
     # after a crossover, check the rsi for confirmation
+
+    num_splits = df.shape[0]/100
+    split_dfs=np.array_split(df,num_splits)
+
     if(cross_over_type != "No Crossover"):
         if(cross_over_type == "Death Cross"):
             if(calculateRSI(df=df,TIMEFRAMEs=timeframe) == "buy"):
                 print("We have a complete buy signal")
+                for i,split_df in enumerate(split_dfs):
+                    getHighLowPricesPerSplitDf(split_df,pair,timeframe)
         elif(cross_over_type == "Golden Cross"):
             if(calculateRSI(df=df,TIMEFRAMEs=timeframe) == "sell"):
                 print("We have a complete sell signal")
-        # if we have a crossover then we look for support and resistance points to confirm the signal
-        if(pair == "XAUUSD"):
-            num_splits = df.shape[0]/100
-            split_dfs=np.array_split(df,num_splits)
-            for i,split_df in enumerate(split_dfs):
-                getHighLowPricesPerSplitDf(split_df,pair,timeframe)
+            # if we have a crossover then we look for support and resistance points to confirm the signal            
+                for i,split_df in enumerate(split_dfs):
+                    getHighLowPricesPerSplitDf(split_df,pair,timeframe)
     else:
         print("No crossover yet")
 
@@ -156,27 +161,39 @@ def getHighLowPricesPerSplitDf(split_df,pair,timeframe):
     
 
 def windowToWindowAnalysis(price_Dict,pair):
-    if(pair == "XAUUSD"):
-        # max price analysis for the same timeframe
-        for counter,price in enumerate(price_Dict[30]["highPrice"]):
-            if(price in price_Dict[15]["highPrice"] or price in price_Dict[5]["highPrice"] or price in price_Dict[1]["highPrice"]):
-                cont_xauusd_Dict["highPrice"].append(price)
-            
-        for counter,price in enumerate(price_Dict[30]["lowPrice"]):
-            if(price in price_Dict[15]["lowPrice"] or price_Dict[5]["lowPrice"] or price_Dict[1]["lowPrice"]):
-                cont_xauusd_Dict["lowPrice"].append(price)
-    
-        # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
-        isPriceCloseToAnySweetSpot(pair)
+    # max price analysis for the same timeframe
+    for counter,price in enumerate(price_Dict[30]["highPrice"]):
+        if(price in price_Dict[15]["highPrice"] or price in price_Dict[5]["highPrice"] or price in price_Dict[1]["highPrice"]):
+            cont_xauusd_Dict["highPrice"].append(price)
+        
+    for counter,price in enumerate(price_Dict[30]["lowPrice"]):
+        if(price in price_Dict[15]["lowPrice"] or price_Dict[5]["lowPrice"] or price_Dict[1]["lowPrice"]):
+            cont_xauusd_Dict["lowPrice"].append(price)
+
+    # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
+    isPriceCloseToAnySweetSpot(pair)
 
 def isPriceCloseToAnySweetSpot(pair):
-    while True:
-        tick =mt5.symbol_info_tick(pair)
-        print(f"The price for {pair} is currently {tick.bid}")
-        if(math.floor(tick.bid) in cont_xauusd_Dict["highPrice"] or math.floor(tick.ask) in cont_xauusd_Dict["lowPrice"]):
-            print("We have a price on our sweet spot")
-            # if there is price on our sweet spot, then we check for other signals for entry
-        time.sleep(5)
+    tick =mt5.symbol_info_tick(pair)
+    print(f"The price for {pair} is currently {tick.bid}")
+    if(math.floor(tick.bid) in cont_xauusd_Dict["highPrice"]):
+        print("We have a price on our higher sweet spot")
+        awaitRetest()
+    elif(math.floor(tick.ask) in cont_xauusd_Dict["lowPrice"]):
+        print("We have price on our lower sweet spot")
+        # if there is price on our sweet spot, we wait for price to retest our sweet spot
+
+def awaitRetest(price,pair,timeframe,type):
+    retest_df = mt5.copy_rates_from_pos(pair,timeframe,0,5)[["close","open","high","low"]]
+    if(type == "sell"):
+        if(all(retest_df["close"].iloc[-5:]) < price):
+            print("Final confirmation made, we are about to sell")
+        else:
+            print("Possible price is continuing with a specific trend")
+    
+    elif(type == "buy"):
+        print("New implementation")
+
 
 # signal generating functions   
 def get_signal(TIMEFRAMEs,pair):
