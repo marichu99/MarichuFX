@@ -71,30 +71,38 @@ def conn():
 def gatherDataController():
     print("We are gathering the data")
     global  lower_TIMEFRAMES,high_TIMEFRAME,SYMBOLS
-    for pair in SYMBOLS:
-        for timeframe in  lower_TIMEFRAMES:
-            backtest_data = mt5.copy_rates_from_pos(pair,timeframe,1,NUM_BARS)
-            bars = pd.DataFrame(backtest_data)
-            # save the data into a dataframe
-            comprehensive_name=f"{str(pair)}{str(timeframe)}"
-            bars.to_csv(rf"backend\backtest\{comprehensive_name}.csv")
-            # pass the dataframe to another method for further pre-processing 
-            splitAndPreprocess(bars,str(pair),timeframe)
+    while True:
+        for pair in SYMBOLS:
+            for timeframe in  lower_TIMEFRAMES:
+                backtest_data = mt5.copy_rates_from_pos(pair,timeframe,1,NUM_BARS)
+                bars = pd.DataFrame(backtest_data)
+                # save the data into a dataframe
+                comprehensive_name=f"{str(pair)}{str(timeframe)}"
+
+                price=bars.iloc[-1]["close"]
+
+                print(f"The price is {price} for {pair} at the {timeframe} timeframe")
+
+                bars.to_csv(rf"backend\backtest\{comprehensive_name}.csv")
+                # pass the dataframe to another method for further pre-processing 
+                splitAndPreprocess(bars,str(pair),timeframe)
 
 def splitAndPreprocess(df,pair,timeframe):
     df= pd.DataFrame(df)
     # change the time variable
     df["time"]=pd.to_datetime(df["time"],unit="s")
 
-    df['fast_ema'] = df['Close'].ewm(span=5, adjust=False).mean()
-    df['slow_ema'] = df['Close'].ewm(span=20, adjust=False).mean()
+    df['fast_ema'] = df['close'].ewm(span=5, adjust=False).mean()
+    df['slow_ema'] = df['close'].ewm(span=20, adjust=False).mean()
 
     df['prev_fast_ema'] = df['fast_ema'].shift(1)
     df['prev_slow_ema'] = df['slow_ema'].shift(1)
 
+    df=df.fillna(0)
+
     df['crossover'] = np.vectorize(calculate_ema_crossover)(df['fast_ema'], df['prev_fast_ema'], df['slow_ema'], df['prev_slow_ema'])
 
-    cross_over_type=df["crossover"][-1]
+    cross_over_type=df.iloc[-1]["crossover"]
 
     print("The crossover type is ",cross_over_type)
     # after a crossover, check the rsi for confirmation
@@ -109,23 +117,19 @@ def splitAndPreprocess(df,pair,timeframe):
                 for i,split_df in enumerate(split_dfs):
                     getHighLowPricesPerSplitDf(split_df,pair,timeframe)
         elif(cross_over_type == "Golden Cross"):
+            print("we have a golden cross")
             if(calculateRSI(df=df,TIMEFRAMEs=timeframe) == "sell"):
                 print("We have a complete sell signal")
             # if we have a crossover then we look for support and resistance points to confirm the signal            
                 for i,split_df in enumerate(split_dfs):
                     getHighLowPricesPerSplitDf(split_df,pair,timeframe)
-    else:
-        print("No crossover yet")
-
-
-    
 
 def getHighLowPricesPerSplitDf(split_df,pair,timeframe):
     split_df=pd.DataFrame(split_df)
-    highClosePrice=math.floor(split_df["close"].max())
-    lowClosePrice=math.floor(split_df["close"].min())
-    highPrice =math.floor(split_df["high"].max())
-    lowPrice=math.floor(split_df["low"].min())
+    highClosePrice=(split_df["close"].max())
+    lowClosePrice=(split_df["close"].min())
+    highPrice =(split_df["high"].max())
+    lowPrice=(split_df["low"].min())
 
     # wick analysis
     bearish_PinBar=highPrice-highClosePrice
@@ -339,11 +343,18 @@ def getDivergence(highRSI,lowRSI,TIMEFRAMEs):
     higher_side =current_close_high-0.8
     lower_side =current_close_low -0.8
     
-    if higher_side >= previous_close_high and current_high_rsi<previous_high_rsi:
-        trade_signal="sell"     
+    # if higher_side >= previous_close_high and current_high_rsi<previous_high_rsi:
+    #     trade_signal="sell"     
          
-    elif lower_side >= previous_close_low and current_low_rsi>previous_low_rsi:
+    # elif lower_side >= previous_close_low and current_low_rsi>previous_low_rsi:
+    #     trade_signal="buy"
+
+    if current_high_rsi >=70 and previous_high_rsi >=70:
+        trade_signal="sell"
+    elif current_low_rsi <=30 and previous_low_rsi<=30:
         trade_signal="buy"
+    
+    print("The signal obtained is", trade_signal)
 
     return trade_signal
 
