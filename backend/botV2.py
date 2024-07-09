@@ -89,9 +89,23 @@ def gatherDataController():
 
                 bars.to_csv(rf"backend\backtest\{comprehensive_name}.csv")
                 # pass the dataframe to another method for further pre-processing 
-                splitAndPreprocess(bars,str(pair),timeframe)
+                splitAndPreprocess(bars,str(pair),timeframe)    
+
 
 def splitAndPreprocess(df,pair,timeframe):
+    df=pd.DataFrame(df)
+    num_splits = df.shape[0]/100
+    split_dfs=np.array_split(df,num_splits)
+
+    for i,split_df in enumerate(split_dfs):
+        getHighLowPricesPerSplitDf(split_df,pair,timeframe)
+
+     # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
+    while not (isPriceCloseToAnySweetSpot(df,pair,timeframe)):
+        time.sleep(1)
+
+
+def getCrossOver(df):
     df= pd.DataFrame(df)
     # change the time variable
     df["time"]=pd.to_datetime(df["time"],unit="s")
@@ -109,26 +123,7 @@ def splitAndPreprocess(df,pair,timeframe):
     cross_over_type=df.iloc[-1]["crossover"]
 
     print("The crossover type is ",cross_over_type)
-    # after a crossover, check the rsi for confirmation
-
-    num_splits = df.shape[0]/100
-    split_dfs=np.array_split(df,num_splits)
-
-    if(cross_over_type != "No Crossover"):
-        if(cross_over_type == "Death Cross"):
-
-            print("The value of the RSI is",calculateRSI(df=df,TIMEFRAMEs=timeframe))
-            if(calculateRSI(df=df,TIMEFRAMEs=timeframe) == "buy"):
-                print("We have a complete buy signal")
-                for i,split_df in enumerate(split_dfs):
-                    getHighLowPricesPerSplitDf(split_df,pair,timeframe)
-        elif(cross_over_type == "Golden Cross"):
-            print("we have a golden cross")
-            if(calculateRSI(df=df,TIMEFRAMEs=timeframe) == "sell"):
-                print("We have a complete sell signal")
-            # if we have a crossover then we look for support and resistance points to confirm the signal            
-                for i,split_df in enumerate(split_dfs):
-                    getHighLowPricesPerSplitDf(split_df,pair,timeframe)
+    return cross_over_type
 
 def getHighLowPricesPerSplitDf(split_df,pair,timeframe):
     split_df=pd.DataFrame(split_df)
@@ -143,8 +138,8 @@ def getHighLowPricesPerSplitDf(split_df,pair,timeframe):
 
     print(f"the {pair} has a max price of {highClosePrice} and a low price of {lowClosePrice} at the {timeframe} minute timeframe")
     if(pair == "XAUUSD"):
-        xauusd_Dict[timeframe]["highPrice"].append(highClosePrice)
-        xauusd_Dict[timeframe]["lowPrice"].append(lowClosePrice)
+        xauusd_Dict[timeframe]["highPrice"].append(math.floor(highClosePrice))
+        xauusd_Dict[timeframe]["lowPrice"].append(math.floor(lowClosePrice))
     elif(pair == "EURUSD"):
         eurusd_Dict[timeframe]["highPrice"].append(highClosePrice)
         eurusd_Dict[timeframe]["lowPrice"].append(lowClosePrice)
@@ -173,27 +168,43 @@ def getHighLowPricesPerSplitDf(split_df,pair,timeframe):
 def windowToWindowAnalysis(price_Dict,pair):
     # max price analysis for the same timeframe
     for counter,price in enumerate(price_Dict[30]["highPrice"]):
+        price=math.floor(price)
         if(price in price_Dict[15]["highPrice"] or price in price_Dict[5]["highPrice"] or price in price_Dict[1]["highPrice"]):
             cont_xauusd_Dict["highPrice"].append(price)
+            print("really high price",price)
         
     for counter,price in enumerate(price_Dict[30]["lowPrice"]):
+        price=math.floor(price)
         if(price in price_Dict[15]["lowPrice"] or price_Dict[5]["lowPrice"] or price_Dict[1]["lowPrice"]):
+            print("Really low price",price)
             cont_xauusd_Dict["lowPrice"].append(price)
 
-    # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
-    isPriceCloseToAnySweetSpot(pair)
-
-def isPriceCloseToAnySweetSpot(pair):
+def isPriceCloseToAnySweetSpot(df,pair,timeframe):
     tick =mt5.symbol_info_tick(pair)
     print(f"The price for {pair} is currently {tick.bid}")
     current_high_price = math.floor(tick.bid)
     current_low_price = math.floor(tick.ask)
-    if(cont_xauusd_Dict["highPrice"] in range(current_high_price-1,current_high_price+1)):
+    signal = calculateRSI(pair)
+
+    print(cont_xauusd_Dict["highPrice"])
+    if(cont_xauusd_Dict["highPrice"] in range(current_high_price-2,current_high_price+2)):
         print("We have a price on our higher sweet spot")
-        awaitRetest()
+        print("The value of the RSI is",signal)
+
+        if(signal == "sell"):
+            print("We have a complete sell signal")
+            awaitSupportResistance(tick.ask,pair,timeframe,type="buy")
+        return True
     elif(cont_xauusd_Dict["lowPrice"] in range(current_low_price-1,current_low_price+1)):
         print("We have price on our lower sweet spot")
+
+        print("The value of the RSI is",signal)
+        if(signal == "buy"):
+            print("We have a complete buy signal")
+            awaitSupportResistance(tick.ask,pair,timeframe,type="buy")
+        return True
         # if there is price on our sweet spot, we wait for price to retest our sweet spot
+    return False
 
 
 def awaitSupportResistance(price,pair,timeframe,type):
@@ -206,7 +217,6 @@ def awaitSupportResistance(price,pair,timeframe,type):
             market_order(pair,VOLUME,"sell",DEVIATION,MAGIC,stop_loss,take_profit)
         else:
             print("Possible price is continuing with a specific trend")
-            awaitRetest()
     
     elif(type == "buy"):
         if(all(retest_df["close"].iloc[-3:]) > price):
@@ -216,18 +226,6 @@ def awaitSupportResistance(price,pair,timeframe,type):
             market_order(pair,VOLUME,"sell",DEVIATION,MAGIC,stop_loss,take_profit)
         else:
             print("Possible price is continuing with a specific trend")
-            awaitRetest()
-
-def awaitRetest(price,pair,timeframe,type):
-    retest_df = mt5.copy_rates_from_pos(pair,timeframe,0,5)[["close","open","high","low"]]
-    if(type == "sell"):
-        if(all(retest_df["close"].iloc[-5:]) < price):
-            print("Final confirmation made, we are about to sell")
-        else:
-            print("Possible price is continuing with a specific trend")
-    
-    elif(type == "buy"):
-        print("New implementation")
 
 def calculate_atr(df, period=14):
     # Ensure the dataframe is sorted by date
@@ -354,68 +352,76 @@ def calculateSMA(fast_sma,prev_fast_sma,slow_sma):
         return "bearish_crossover"
     
 # calculate the RSI
-def calculateRSI(df,TIMEFRAMEs):
-    close_delta=df["close"].diff()
-    # make two series: one for lower closes and one for higher closes
-    up=close_delta.clip(lower=0)
-    down=-1*close_delta.clip(upper=0)
+def calculateRSI(pair):
 
-    # setting the RSI period
-    rsi_period=14
-    # to calculate RSI, we first need to calculate the simple weighted average gain and loss during the period
-    df['gain']=(df['close']-df['open']).apply(lambda x: x if x>0 else 0)
-    df['loss']=(df['close']-df['open']).apply(lambda x: -x if x<0 else 0)
-    # we calculate the exponential moving average
-    # df["ema_gain"]=up.rolling(rsi_period).mean()
-    # df["ema_loss"]=down.rolling(rsi_period).mean()
-    df["ema_gain"]=df["gain"].ewm(span=rsi_period,min_periods=rsi_period).mean()
-    df["ema_loss"]=df["loss"].ewm(span=rsi_period,min_periods=rsi_period).mean()
-    """
-      Calculating the SMA for the symbol in the minute timeframe
-    """
-    # calculating the simple moving average
-    df["fast_sma"]=df["close"].rolling(FSMA_PERIOD).mean()
-    df["slow_sma"]=df["close"].rolling(SL_SMA_PERIOD).mean()
-    # calculate the previous SMA
-    df["prev_fast_sma"]=df["fast_sma"].shift(1)
-    # crossover column
-    df=df.fillna(0)
-    df["crossover"]= np.vectorize(calculateSMA)(df["fast_sma"],df["prev_fast_sma"],df["slow_sma"])
-    # the Relative strength is gotten by dividing the exponential average gain witb the exponential average loss
-    df['RS']=df['ema_gain']/df['ema_loss']
-    # the RSI is calculated based on the RS using the following formula
-    df['rd_14']=100-(100/(df['RS']+1))
-    # print(df)
-    
-    # define the ATR period
-    atr_period=14
-    # calculating the range of each candle
-    df['range']=df['high']-df['low']
-    # calculating the average value of ranges
-    df['atr_14']=df['range'].rolling(atr_period).mean()
-    # print(df)
-    atr=df.iloc[-1]["atr_14"]
-    rd_14=df.iloc[-1]["rd_14"]
-    """
-     Calculate the RSI divergence by getting the max RSI and min RSI in the periods
-     Then call the getDivergence() function
-    """
-    data1=df[df["rd_14"] >= 70]
-    highRSI=pd.DataFrame(data=data1)[["rd_14","close"]]
-    # filter to the last 20 bars
-    
-    # print("HIGH RSI DATAFRAME ")
-    # print(highRSI.tail(20))
-    current_price=df.iloc[-1]["close"]
-    previous_price=df.iloc[-2]["close"]
+    global lower_TIMEFRAMES
+    print("The lower timefranes",lower_TIMEFRAMES)
+    for timeframe in lower_TIMEFRAMES:
+        df = pd.DataFrame(mt5.copy_rates_from_pos(pair,timeframe,0,1000))[["close","open","high","low"]]
 
-    
-    # low RSI dataframe
-    data=df[df["rd_14"] <=30]
-    lowRSI=pd.DataFrame(data=data)[["rd_14","close"]]
-    # print("LOW RSI DATAFRAME ")
-    # print(lowRSI.tail(20))
-    return getDivergence(highRSI,lowRSI,TIMEFRAMEs)
+        close_delta=df["close"].diff()
+        # make two series: one for lower closes and one for higher closes
+        up=close_delta.clip(lower=0)
+        down=-1*close_delta.clip(upper=0)
+
+        # setting the RSI period
+        rsi_period=14
+        # to calculate RSI, we first need to calculate the simple weighted average gain and loss during the period
+        df['gain']=(df['close']-df['open']).apply(lambda x: x if x>0 else 0)
+        df['loss']=(df['close']-df['open']).apply(lambda x: -x if x<0 else 0)
+        # we calculate the exponential moving average
+        # df["ema_gain"]=up.rolling(rsi_period).mean()
+        # df["ema_loss"]=down.rolling(rsi_period).mean()
+        df["ema_gain"]=df["gain"].ewm(span=rsi_period,min_periods=rsi_period).mean()
+        df["ema_loss"]=df["loss"].ewm(span=rsi_period,min_periods=rsi_period).mean()
+        """
+        Calculating the SMA for the symbol in the minute timeframe
+        """
+        # calculating the simple moving average
+        df["fast_sma"]=df["close"].rolling(FSMA_PERIOD).mean()
+        df["slow_sma"]=df["close"].rolling(SL_SMA_PERIOD).mean()
+        # calculate the previous SMA
+        df["prev_fast_sma"]=df["fast_sma"].shift(1)
+        # crossover column
+        df=df.fillna(0)
+        df["crossover"]= np.vectorize(calculateSMA)(df["fast_sma"],df["prev_fast_sma"],df["slow_sma"])
+        # the Relative strength is gotten by dividing the exponential average gain witb the exponential average loss
+        df['RS']=df['ema_gain']/df['ema_loss']
+        # the RSI is calculated based on the RS using the following formula
+        df['rd_14']=100-(100/(df['RS']+1))
+        # print(df)
+        
+        # define the ATR period
+        atr_period=14
+        # calculating the range of each candle
+        df['range']=df['high']-df['low']
+        # calculating the average value of ranges
+        df['atr_14']=df['range'].rolling(atr_period).mean()
+        # print(df)
+        atr=df.iloc[-1]["atr_14"]
+        rd_14=df.iloc[-1]["rd_14"]
+        """
+        Calculate the RSI divergence by getting the max RSI and min RSI in the periods
+        Then call the getDivergence() function
+        """
+        data1=df[df["rd_14"] >= 70]
+        highRSI=pd.DataFrame(data=data1)[["rd_14","close"]]
+
+        current_price=df.iloc[-1]["close"]
+        previous_price=df.iloc[-2]["close"]
+
+        
+        # low RSI dataframe
+        data=df[df["rd_14"] <=30]
+        lowRSI=pd.DataFrame(data=data)[["rd_14","close"]]
+
+        print(f"The RSI for {timeframe} tf is",rd_14)
+        # signal = getDivergence(highRSI,lowRSI,timeframe)
+        if(rd_14 >=70 and timeframe in [mt5.TIMEFRAME_M15, mt5.TIMEFRAME_M30]):
+            return "sell"
+        elif (rd_14 >=70 and timeframe in [mt5.TIMEFRAME_M15, mt5.TIMEFRAME_M30]):
+            return "buy"
+        return "none"
 
 # get the bullish and bearish divergence
 def getDivergence(highRSI,lowRSI,TIMEFRAMEs):
@@ -451,6 +457,8 @@ def getDivergence(highRSI,lowRSI,TIMEFRAMEs):
     # elif lower_side >= previous_close_low and current_low_rsi>previous_low_rsi:
     #     trade_signal="buy"
 
+    print("The high rsi ",current_high_rsi)
+
     if current_high_rsi >=70 and previous_high_rsi >=70:
         trade_signal="sell"
     elif current_low_rsi <=30 and previous_low_rsi<=30:
@@ -459,10 +467,6 @@ def getDivergence(highRSI,lowRSI,TIMEFRAMEs):
     print("The signal obtained is", trade_signal)
 
     return trade_signal
-
-    # print("The gold dictionary")
-    # print(f"The {timeframe} timeframe has a maximum price of {highClosePrice} and minimum price of {lowClosePrice}")
-    # print(xauusd_Dict)
 
 def main():
     conn()
