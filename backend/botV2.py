@@ -67,7 +67,6 @@ def conn():
     else:
         resu["Message"]="Login is Successful"
         print("the login was successful")
-        # print(json.dumps(resu))
         with open("data.json","w") as dataF:
             json.dump(resu,dataF)
         gatherDataController()
@@ -89,7 +88,11 @@ def gatherDataController():
 
                 bars.to_csv(rf"backend\backtest\{comprehensive_name}.csv")
                 # pass the dataframe to another method for further pre-processing 
-                splitAndPreprocess(bars,str(pair),timeframe)    
+                splitAndPreprocess(bars,str(pair),timeframe)   
+             # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
+        if (isPriceCloseToAnySweetSpot(pair)):
+            time.sleep(1) 
+            break
 
 
 def splitAndPreprocess(df,pair,timeframe):
@@ -100,9 +103,6 @@ def splitAndPreprocess(df,pair,timeframe):
     for i,split_df in enumerate(split_dfs):
         getHighLowPricesPerSplitDf(split_df,pair,timeframe)
 
-     # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
-    while not (isPriceCloseToAnySweetSpot(df,pair,timeframe)):
-        time.sleep(1)
 
 
 def getCrossOver(df):
@@ -122,7 +122,6 @@ def getCrossOver(df):
 
     cross_over_type=df.iloc[-1]["crossover"]
 
-    print("The crossover type is ",cross_over_type)
     return cross_over_type
 
 def getHighLowPricesPerSplitDf(split_df,pair,timeframe):
@@ -171,7 +170,7 @@ def windowToWindowAnalysis(price_Dict,pair):
         price=math.floor(price)
         if(price in price_Dict[15]["highPrice"] or price in price_Dict[5]["highPrice"] or price in price_Dict[1]["highPrice"]):
             cont_xauusd_Dict["highPrice"].append(price)
-            print("really high price",price)
+            print(f"really high price {price} for {pair}")
         
     for counter,price in enumerate(price_Dict[30]["lowPrice"]):
         price=math.floor(price)
@@ -179,31 +178,40 @@ def windowToWindowAnalysis(price_Dict,pair):
             print("Really low price",price)
             cont_xauusd_Dict["lowPrice"].append(price)
 
-def isPriceCloseToAnySweetSpot(df,pair,timeframe):
-    tick =mt5.symbol_info_tick(pair)
-    print(f"The price for {pair} is currently {tick.bid}")
-    current_high_price = math.floor(tick.bid)
-    current_low_price = math.floor(tick.ask)
-    signal = calculateRSI(pair)
+def isPriceCloseToAnySweetSpot(pair):
+    global lower_TIMEFRAMES
+    for timeframe in lower_TIMEFRAMES:
+        tick =mt5.symbol_info_tick(pair)
+        print(f"The price for {pair} is currently {tick.bid} at {timeframe} timeframe")
+        current_high_price = math.floor(tick.bid)
+        current_low_price = math.floor(tick.ask)
+        signal = calculateRSI(pair)
+        time.sleep(6)
 
-    print(cont_xauusd_Dict["highPrice"])
-    if(cont_xauusd_Dict["highPrice"] in range(current_high_price-2,current_high_price+2)):
-        print("We have a price on our higher sweet spot")
-        print("The value of the RSI is",signal)
+        high_prices = cont_xauusd_Dict["highPrice"]
+        low_prices = cont_xauusd_Dict["lowPrice"]
 
-        if(signal == "sell"):
-            print("We have a complete sell signal")
-            awaitSupportResistance(tick.ask,pair,timeframe,type="buy")
-        return True
-    elif(cont_xauusd_Dict["lowPrice"] in range(current_low_price-1,current_low_price+1)):
-        print("We have price on our lower sweet spot")
+        # Print each high price
+        for price in high_prices:
+            print(price)        
+            # Check if the price is within the specified range
+            if price in range(current_high_price-2, current_high_price+2):
+                print("We have a price on our higher sweep")
+                print("The value of the RSI is",signal)
 
-        print("The value of the RSI is",signal)
-        if(signal == "buy"):
-            print("We have a complete buy signal")
-            awaitSupportResistance(tick.ask,pair,timeframe,type="buy")
-        return True
-        # if there is price on our sweet spot, we wait for price to retest our sweet spot
+                if(signal == "sell"):
+                    print("We have a complete sell signal")
+                    awaitSupportResistance(tick.ask,pair,timeframe,type="buy")
+                    return True
+        for price in low_prices:
+            if(price in range(current_low_price-2,current_low_price+2)):
+                print("We have price on our lower sweet spot")
+                print("The value of the RSI is",signal)
+                if(signal == "buy"):
+                    print("We have a complete buy signal")
+                    awaitSupportResistance(tick.ask,pair,timeframe,type="buy")
+                    return True
+            # if there is price on our sweet spot, we wait for price to retest our sweet spot
     return False
 
 
@@ -355,7 +363,6 @@ def calculateSMA(fast_sma,prev_fast_sma,slow_sma):
 def calculateRSI(pair):
 
     global lower_TIMEFRAMES
-    print("The lower timefranes",lower_TIMEFRAMES)
     for timeframe in lower_TIMEFRAMES:
         df = pd.DataFrame(mt5.copy_rates_from_pos(pair,timeframe,0,1000))[["close","open","high","low"]]
 
