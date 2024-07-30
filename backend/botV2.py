@@ -7,6 +7,7 @@ from threading import Thread
 import sys
 import math
 import json
+import os
 
 
 
@@ -85,7 +86,13 @@ def gatherDataController():
 
             print(f"The price is {price} for {pair} at the {timeframe} timeframe")
 
-            bars.to_csv(rf"backend\backtest\{comprehensive_name}.csv")
+                        # Define the directory path
+            directory = 'backend/backtest'
+
+            # Check if the directory exists, and create it if it does not
+            if not os.path.exists(directory):
+                os.makedirs(directory)
+                bars.to_csv(rf".\backend\backtest\{comprehensive_name}.csv")
             # pass the dataframe to another method for further pre-processing 
             splitAndPreprocess(bars,str(pair),timeframe)   
             # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
@@ -233,19 +240,19 @@ def awaitSupportResistance(price,pair,timeframe,type):
     elif(type == "buy"):
         if(all(retest_df["close"].iloc[-3:]) > price):
             print("Final confirmation made, we are about to buy")
-            market_order(pair,VOLUME,"sell",DEVIATION,MAGIC,stop_loss,take_profit)
+            market_order(pair,VOLUME,"buy",DEVIATION,MAGIC,stop_loss,take_profit)
         else:
             print("Possible price is continuing with a specific trend")
-            market_order(pair,VOLUME,"sell",DEVIATION,MAGIC,stop_loss,take_profit)
+            market_order(pair,VOLUME,"buy",DEVIATION,MAGIC,stop_loss,take_profit)
 
 def calculate_atr(df, period=14):
     # Ensure the dataframe is sorted by date
     df = df.sort_index()
     
     # Calculate True Range (TR)
-    df['high-low'] = df['High'] - df['Low']
-    df['high-prevclose'] = abs(df['High'] - df['Close'].shift(1))
-    df['low-prevclose'] = abs(df['Low'] - df['Close'].shift(1))
+    df['high-low'] = df['high'] - df['low']
+    df['high-prevclose'] = abs(df['high'] - df['close'].shift(1))
+    df['low-prevclose'] = abs(df['low'] - df['close'].shift(1))
     df['TR'] = df[['high-low', 'high-prevclose', 'low-prevclose']].max(axis=1)
 
     # Calculate the ATR
@@ -292,8 +299,10 @@ def market_order(symbol,volume,order_type,deviation,magic,stoploss,takeprofit):
         "type_filling": mt5.ORDER_FILLING_IOC
     }
     result = mt5.order_send(request)
+
+    print("The order is",orders)
     print("1. order_send(): by {} {} lots at {} with deviation={} points".format(symbol,volume,price,deviation))
-    if result.retcode != mt5.TRADE_RETCODE_DONE and (orders <1 or orders>4):
+    if result.retcode != mt5.TRADE_RETCODE_DONE:
         print("2. order_send failed, retcode={}".format(result.retcode))
         # request the result as a dictionary and display it element by element
         result_dict=result._asdict()
@@ -364,7 +373,7 @@ def calculateSMA(fast_sma,prev_fast_sma,slow_sma):
     
 # calculate the RSI
 def calculateRSI(pair,timeframe):
-    df = pd.DataFrame(mt5.copy_rates_from_pos(pair, timeframe, 0, 1000))[["close", "open", "high", "low"]]
+    df = pd.DataFrame(mt5.copy_rates_from_pos(pair, timeframe, 0, 28))[["close", "open", "high", "low"]]
 
     close_delta = df["close"].diff()
     up = close_delta.clip(lower=0)
