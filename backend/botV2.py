@@ -209,7 +209,7 @@ def isPriceCloseToAnySweetSpot(pair):
 
                 if(signal == "sell"):
                     print("We have a complete sell signal")
-                    awaitSupportResistance(tick.ask,pair,timeframe,type="buy")
+                    awaitSupportResistance(tick.ask,pair,timeframe,type="sell")
                     return True
         for price in low_prices:
             if(price in range(current_low_price-2,current_low_price+2)):
