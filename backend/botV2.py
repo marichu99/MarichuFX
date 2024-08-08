@@ -8,11 +8,12 @@ import sys
 import math
 import json
 import os
+import asyncio
 
 
 
 #global variables
-SYMBOLS = ["XAUUSD"]
+SYMBOLS = ["XAUUSD","BTCUSD.lv"]
 SYMBOLZ = ["XAUUSD","EURUSD","USDCAD","USDJPY","AUDCAD","GBPUSD","GBPJPY","EURJPY"]
 TIMEFRAME = mt5.TIMEFRAME_M15  
 high_TIMEFRAME=[mt5.TIMEFRAME_M30,mt5.TIMEFRAME_M15,mt5.TIMEFRAME_H1,mt5.TIMEFRAME_H4]
@@ -28,6 +29,7 @@ STANDARD_DEVIATIONS=int(2) # number of deviations for calculation of bolinger ba
 
 # window formation
 xauusd_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
+btcusd_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
 eurusd_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
 usdcad_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
 usdjpy_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
@@ -39,6 +41,7 @@ eurjpy_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},
 
 # contentious price points
 cont_xauusd_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[],"highPriceRSI":[],"lowPriceRSI":[]}
+cont_btcusd_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[],"highPriceRSI":[],"lowPriceRSI":[]}
 cont_eurusd_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
 cont_usdcad_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
 cont_usdjpy_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
@@ -93,13 +96,17 @@ def gatherDataController():
             if not os.path.exists(directory):
                 os.makedirs(directory)
                 bars.to_csv(rf".\backend\backtest\{comprehensive_name}.csv")
+            else:
+                bars.to_csv(rf".\backend\backtest\{comprehensive_name}.csv")
+
             # pass the dataframe to another method for further pre-processing 
             splitAndPreprocess(bars,str(pair),timeframe)   
             # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
     while True:
-        if (isPriceCloseToAnySweetSpot(pair)):
-            time.sleep(1) 
-            break
+        for pair in SYMBOLS:
+            if (isPriceCloseToAnySweetSpot(pair)):
+                time.sleep(3) 
+                break
 
 
 def splitAndPreprocess(df,pair,timeframe):
@@ -145,6 +152,11 @@ def getHighLowPricesPerSplitDf(split_df,pair,timeframe):
     if(pair == "XAUUSD"):
         xauusd_Dict[timeframe]["highPrice"].append(math.floor(highClosePrice))
         xauusd_Dict[timeframe]["lowPrice"].append(math.floor(lowClosePrice))
+        windowToWindowAnalysis(xauusd_Dict,pair)
+    if(pair == "BTCUSD"):
+        btcusd_Dict[timeframe]["highPrice"].append(math.floor(highClosePrice))
+        btcusd_Dict[timeframe]["lowPrice"].append(math.floor(lowClosePrice))
+        windowToWindowAnalysis(btcusd_Dict,pair)
     elif(pair == "EURUSD"):
         eurusd_Dict[timeframe]["highPrice"].append(highClosePrice)
         eurusd_Dict[timeframe]["lowPrice"].append(lowClosePrice)
@@ -167,7 +179,7 @@ def getHighLowPricesPerSplitDf(split_df,pair,timeframe):
         eurjpy_Dict[timeframe]["highPrice"].append(highClosePrice)
         eurjpy_Dict[timeframe]["lowPrice"].append(lowClosePrice)
     
-    windowToWindowAnalysis(xauusd_Dict,pair)    
+        
     
 
 def windowToWindowAnalysis(price_Dict,pair):
@@ -175,7 +187,10 @@ def windowToWindowAnalysis(price_Dict,pair):
     for counter,price in enumerate(price_Dict[30]["highPrice"]):
         price=math.floor(price)
         if(price in price_Dict[15]["highPrice"] or price in price_Dict[5]["highPrice"] or price in price_Dict[1]["highPrice"]):
-            cont_xauusd_Dict["highPrice"].append(price)
+            if(pair == "XAUUSD"):
+                cont_xauusd_Dict["highPrice"].append(price)
+            elif(pair == "BTCUSD"):
+                cont_btcusd_Dict["highPrice"].append(price)
             # rsi,signal=calculateRSI(pair,30)
             # cont_xauusd_Dict["highPriceRSI"].append(rsi)
 
@@ -183,7 +198,10 @@ def windowToWindowAnalysis(price_Dict,pair):
     for counter,price in enumerate(price_Dict[30]["lowPrice"]):
         price=math.floor(price)
         if(price in price_Dict[15]["lowPrice"] or price_Dict[5]["lowPrice"] or price_Dict[1]["lowPrice"]):
-            cont_xauusd_Dict["lowPrice"].append(price)
+            if(pair == "XAUUSD"):
+                cont_xauusd_Dict["lowPrice"].append(price) 
+            elif(pair == "BTCUSD"):
+                cont_btcusd_Dict["lowPrice"].append(price)
             # rsi,signal=calculateRSI(pair,30)
             # cont_xauusd_Dict["lowPriceRSI"].append(rsi)
 
@@ -196,9 +214,7 @@ def isPriceCloseToAnySweetSpot(pair):
         current_low_price = math.floor(tick.ask)
         rsi,signal = calculateRSI(pair,timeframe)
         # time.sleep(6)
-
-        high_prices = cont_xauusd_Dict["highPrice"]
-        low_prices = cont_xauusd_Dict["lowPrice"]
+        high_prices,low_prices=setHighLowPriceBasedOnPair(pair)        
 
         # Print each high price
         for price in high_prices:
@@ -209,7 +225,7 @@ def isPriceCloseToAnySweetSpot(pair):
 
                 if(signal == "sell"):
                     print("We have a complete sell signal")
-                    awaitSupportResistance(tick.ask,pair,timeframe,type="sell")
+                    asyncio.run(awaitSupportResistance(tick.ask,pair,timeframe,type="sell"))
                     return True
         for price in low_prices:
             if(price in range(current_low_price-2,current_low_price+2)):
@@ -222,28 +238,76 @@ def isPriceCloseToAnySweetSpot(pair):
             # if there is price on our sweet spot, we wait for price to retest our sweet spot
     return False
 
+def setHighLowPriceBasedOnPair(pair):
+    if pair == "XAUUSD":
+        high_prices = cont_xauusd_Dict["highPrice"]
+        low_prices = cont_xauusd_Dict["lowPrice"]
+        return high_prices,low_prices
+    elif pair == "BTCUSD.lv":
+        high_prices = cont_eurusd_Dict["highPrice"]
+        low_prices = cont_eurusd_Dict["lowPrice"]
+        return high_prices,low_prices
+    
 
-def awaitSupportResistance(price,pair,timeframe,type):
-    retest_df = mt5.copy_rates_from_pos(pair,timeframe,0,10)[["close","open","high","low"]]
+
+async def awaitSupportResistance(price, pair, timeframe, type):
+    # Fetch the last 10 candlesticks
+    retest_df = mt5.copy_rates_from_pos(pair, timeframe, 0, 10)[["close", "open", "high", "low"]]
     retest_df = pd.DataFrame(retest_df)
 
+    # Calculate ATR, stop loss, and take profit levels
     atr = calculate_atr(retest_df)
-    stop_loss,take_profit=calculate_levels(price,atr,type)
-    if(type == "sell"):
-        if(all(retest_df["close"].iloc[-3:]) < price):
-            print("Final confirmation made, we are about to sell")           
-            market_order(pair,VOLUME,"sell",DEVIATION,MAGIC,stop_loss,take_profit)
-        else:
-            print("Possible price is continuing with a specific trend")
-            market_order(pair,VOLUME,"sell",DEVIATION,MAGIC,stop_loss,take_profit)
+    stop_loss, take_profit = calculate_levels(price, atr, type)
     
-    elif(type == "buy"):
-        if(all(retest_df["close"].iloc[-3:]) > price):
-            print("Final confirmation made, we are about to buy")
-            market_order(pair,VOLUME,"buy",DEVIATION,MAGIC,stop_loss,take_profit)
+    # Define the pattern we are looking for based on the trade type
+    pattern_detected = False
+    pattern_name = None
+    
+    if type == "sell":
+        pattern_name = "Bearish Engulfing"
+    elif type == "buy":
+        pattern_name = "Bullish Engulfing"
+    
+    # Wait for the desired pattern to form
+    for _ in range(3):  # Waiting for up to 3 candles to form
+        await asyncio.sleep(300)  # Wait for the next 5-minute candle (300 seconds)
+        
+        # Update the retest_df with the latest candle data
+        latest_candle = mt5.copy_rates_from_pos(pair, timeframe, 0, 10)[["close", "open", "high", "low"]]
+        retest_df = pd.DataFrame(latest_candle)
+        
+        # Check for the specific candlestick pattern
+        if type == "sell" and detect_bearish_engulfing(retest_df):
+            print(f"Bearish Engulfing pattern detected. Preparing to sell.")
+            pattern_detected = True
+            break
+        elif type == "buy" and detect_bullish_engulfing(retest_df):
+            print(f"Bullish Engulfing pattern detected. Preparing to buy.")
+            pattern_detected = True
+            break
         else:
-            print("Possible price is continuing with a specific trend")
-            market_order(pair,VOLUME,"buy",DEVIATION,MAGIC,stop_loss,take_profit)
+            print(f"Waiting for {pattern_name} pattern to form...")
+    
+    if pattern_detected:
+        print(f"Final confirmation made, executing {type} order.")
+        market_order(pair, VOLUME, type, DEVIATION, MAGIC, stop_loss, take_profit)
+    else:
+        print(f"No {pattern_name} pattern detected. Exiting without placing a trade.")
+    
+# Candlestick pattern detection functions
+def detect_bearish_engulfing(df):
+    # Check if the last two candles form a Bearish Engulfing pattern
+    if df.iloc[-2]["open"] < df.iloc[-2]["close"] and df.iloc[-1]["open"] > df.iloc[-1]["close"]:
+        if df.iloc[-1]["open"] > df.iloc[-2]["close"] and df.iloc[-1]["close"] < df.iloc[-2]["open"]:
+            return True
+    return False
+
+def detect_bullish_engulfing(df):
+    # Check if the last two candles form a Bullish Engulfing pattern
+    if df.iloc[-2]["open"] > df.iloc[-2]["close"] and df.iloc[-1]["open"] < df.iloc[-1]["close"]:
+        if df.iloc[-1]["open"] < df.iloc[-2]["close"] and df.iloc[-1]["close"] > df.iloc[-2]["open"]:
+            return True
+    return False
 
 def calculate_atr(df, period=14):
     # Ensure the dataframe is sorted by date
