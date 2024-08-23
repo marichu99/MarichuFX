@@ -16,8 +16,9 @@ import asyncio
 SYMBOLS = ["XAUUSD","BTCUSD.lv"]
 SYMBOLZ = ["XAUUSD","EURUSD","USDCAD","USDJPY","AUDCAD","GBPUSD","GBPJPY","EURJPY"]
 TIMEFRAME = mt5.TIMEFRAME_M15  
-high_TIMEFRAME=[mt5.TIMEFRAME_M30,mt5.TIMEFRAME_M15,mt5.TIMEFRAME_H1,mt5.TIMEFRAME_H4]
+high_TIMEFRAME=[mt5.TIMEFRAME_M30,mt5.TIMEFRAME_M15,mt5.TIMEFRAME_H1,mt5.TIMEFRAME_H4,mt5.TIMEFRAME_D1]
 lower_TIMEFRAMES=[mt5.TIMEFRAME_M1,mt5.TIMEFRAME_M5,mt5.TIMEFRAME_M15,mt5.TIMEFRAME_M30]
+all_TIMEFRAMES=high_TIMEFRAME+lower_TIMEFRAMES
 NUM_BARS=1000
 VOLUME=0.1
 DEVIATION =20 # deviation for order slippage
@@ -42,13 +43,13 @@ eurjpy_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},
 # contentious price points
 cont_xauusd_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[],"highPriceRSI":[],"lowPriceRSI":[]}
 cont_btcusd_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[],"highPriceRSI":[],"lowPriceRSI":[]}
-cont_eurusd_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
-cont_usdcad_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
-cont_usdjpy_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
-cont_audcad_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
-cont_gbpusd_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
-cont_gbpjpy_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
-cont_eurjpy_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[]}
+cont_eurusd_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[],"highPriceRSI":[],"lowPriceRSI":[]}
+cont_usdcad_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[],"highPriceRSI":[],"lowPriceRSI":[]}
+cont_usdjpy_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[],"highPriceRSI":[],"lowPriceRSI":[]}
+cont_audcad_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[],"highPriceRSI":[],"lowPriceRSI":[]}
+cont_gbpusd_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[],"highPriceRSI":[],"lowPriceRSI":[]}
+cont_gbpjpy_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[],"highPriceRSI":[],"lowPriceRSI":[]}
+cont_eurjpy_Dict ={"highPrice":[],"lowPrice":[],"confirmedPrice":[],"highPriceRSI":[],"lowPriceRSI":[]}
 
 ema_20=[]
 ema_5=[]
@@ -77,8 +78,8 @@ def conn():
 
 def gatherDataController():
     print("We are gathering the data")
-    global  lower_TIMEFRAMES,high_TIMEFRAME,SYMBOLS    
-    for pair in SYMBOLS:
+    global  lower_TIMEFRAMES,high_TIMEFRAME,SYMBOLS,SYMBOLZ
+    for pair in SYMBOLZ:
         for timeframe in  lower_TIMEFRAMES:
             backtest_data = mt5.copy_rates_from_pos(pair,timeframe,1,NUM_BARS)
             bars = pd.DataFrame(backtest_data)
@@ -103,7 +104,7 @@ def gatherDataController():
             splitAndPreprocess(bars,str(pair),timeframe)   
             # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
     while True:
-        for pair in SYMBOLS:
+        for pair in SYMBOLZ:
             if (isPriceCloseToAnySweetSpot(pair)):
                 time.sleep(3) 
                 break
@@ -160,50 +161,100 @@ def getHighLowPricesPerSplitDf(split_df,pair,timeframe):
     elif(pair == "EURUSD"):
         eurusd_Dict[timeframe]["highPrice"].append(highClosePrice)
         eurusd_Dict[timeframe]["lowPrice"].append(lowClosePrice)
+        windowToWindowAnalysis(eurjpy_Dict,pair)
     elif(pair == "USDCAD"):
         usdcad_Dict[timeframe]["highPrice"].append(highClosePrice)
         usdcad_Dict[timeframe]["lowPrice"].append(lowClosePrice)
+        windowToWindowAnalysis(usdcad_Dict,pair)
     elif(pair == "USDJPY"):
         usdjpy_Dict[timeframe]["highPrice"].append(highClosePrice)
         usdjpy_Dict[timeframe]["lowPrice"].append(lowClosePrice)
+        windowToWindowAnalysis(usdjpy_Dict,pair)
     elif(pair == "AUDCAD"):
         audcad_Dict[timeframe]["highPrice"].append(highClosePrice)
         audcad_Dict[timeframe]["lowPrice"].append(lowClosePrice)
+        windowToWindowAnalysis(audcad_Dict,pair)
     elif(pair == "GBPUSD"):
         gbpusd_Dict[timeframe]["highPrice"].append(highClosePrice)
         gbpusd_Dict[timeframe]["lowPrice"].append(lowClosePrice)
+        windowToWindowAnalysis(gbpusd_Dict,pair)
     elif(pair == "GBPJPY"):
         gbpjpy_Dict[timeframe]["highPrice"].append(highClosePrice)
         gbpjpy_Dict[timeframe]["lowPrice"].append(lowClosePrice)
+        windowToWindowAnalysis(eurjpy_Dict,pair)
     elif(pair == "EURJPY"):
         eurjpy_Dict[timeframe]["highPrice"].append(highClosePrice)
         eurjpy_Dict[timeframe]["lowPrice"].append(lowClosePrice)
+        windowToWindowAnalysis(eurjpy_Dict,pair)
     
         
     
 
 def windowToWindowAnalysis(price_Dict,pair):
+    range_value = 2   
+
     # max price analysis for the same timeframe
     for counter,price in enumerate(price_Dict[30]["highPrice"]):
         price=math.floor(price)
-        if(price in price_Dict[15]["highPrice"] or price in price_Dict[5]["highPrice"] or price in price_Dict[1]["highPrice"]):
-            if(pair == "XAUUSD"):
-                cont_xauusd_Dict["highPrice"].append(price)
-            elif(pair == "BTCUSD"):
-                cont_btcusd_Dict["highPrice"].append(price)
-            # rsi,signal=calculateRSI(pair,30)
-            # cont_xauusd_Dict["highPriceRSI"].append(rsi)
+        def is_within_range(price, target_price_arr):
+            return any(x == target_price_arr for x in range(price - 2, price + 3))
+        if (
+                is_within_range(price, price_Dict[15]["lowPrice"] ) or
+                is_within_range(price, price_Dict[5]["lowPrice"] ) or
+                is_within_range(price, price_Dict[1]["lowPrice"] )
+        ):
+                if(pair == "XAUUSD"):
+                    cont_xauusd_Dict["highPrice"].append(price)
+                elif(pair == "BTCUSD"):
+                    cont_btcusd_Dict["highPrice"].append(price)
+                elif(pair == "EURUSD"):
+                    cont_eurusd_Dict["highPrice"].append(price)
+                elif(pair == "EURJPY"):
+                    cont_eurjpy_Dict["highPrice"].append(price)
+                elif(pair == "AUDCAD"):
+                    cont_audcad_Dict["highPrice"].append(price)
+                elif(pair == "USDCAD"):
+                    cont_usdcad_Dict["highPrice"].append(price)
+                elif(pair == "GBPUSD"):
+                    cont_gbpusd_Dict["highPrice"].append(price)
+                elif(pair == "GBPJPY"):
+                    cont_gbpjpy_Dict["highPrice"].append(price)
+                elif(pair == "USDJPY"):
+                    cont_usdjpy_Dict["highPrice"].append(price)
+                # rsi,signal=calculateRSI(pair,30)
+                # cont_xauusd_Dict["highPriceRSI"].append(rsi)
 
         
     for counter,price in enumerate(price_Dict[30]["lowPrice"]):
         price=math.floor(price)
-        if(price in price_Dict[15]["lowPrice"] or price_Dict[5]["lowPrice"] or price_Dict[1]["lowPrice"]):
-            if(pair == "XAUUSD"):
-                cont_xauusd_Dict["lowPrice"].append(price) 
-            elif(pair == "BTCUSD"):
-                cont_btcusd_Dict["lowPrice"].append(price)
-            # rsi,signal=calculateRSI(pair,30)
-            # cont_xauusd_Dict["lowPriceRSI"].append(rsi)
+        def is_within_range(price, target_price_arr):
+            return any(x == target_price_arr for x in range(price - 2, price + 3))
+        if (
+            is_within_range(price, price_Dict[15]["lowPrice"] ) or
+            is_within_range(price, price_Dict[5]["lowPrice"] ) or
+            is_within_range(price, price_Dict[1]["lowPrice"] )
+        ):
+        
+                if(pair == "XAUUSD"):
+                    cont_xauusd_Dict["lowPrice"].append(price) 
+                elif(pair == "BTCUSD"):
+                    cont_btcusd_Dict["lowPrice"].append(price)
+                elif(pair == "EURUSD"):
+                    cont_eurusd_Dict["lowPrice"].append(price)
+                elif(pair == "EURJPY"):
+                    cont_eurjpy_Dict["lowPrice"].append(price)
+                elif(pair == "AUDCAD"):
+                    cont_audcad_Dict["lowPrice"].append(price)
+                elif(pair == "USDCAD"):
+                    cont_usdcad_Dict["lowPrice"].append(price)
+                elif(pair == "GBPUSD"):
+                    cont_gbpusd_Dict["lowPrice"].append(price)
+                elif(pair == "GBPJPY"):
+                    cont_gbpjpy_Dict["lowPrice"].append(price)
+                elif(pair == "USDJPY"):
+                    cont_usdjpy_Dict["lowPrice"].append(price)
+                # rsi,signal=calculateRSI(pair,30)
+                # cont_xauusd_Dict["lowPriceRSI"].append(rsi)
 
 def isPriceCloseToAnySweetSpot(pair):
     global lower_TIMEFRAMES
@@ -244,8 +295,36 @@ def setHighLowPriceBasedOnPair(pair):
         low_prices = cont_xauusd_Dict["lowPrice"]
         return high_prices,low_prices
     elif pair == "BTCUSD.lv":
+        high_prices = cont_btcusd_Dict["highPrice"]
+        low_prices = cont_btcusd_Dict["lowPrice"]
+        return high_prices,low_prices
+    elif pair == "EURUSD":
         high_prices = cont_eurusd_Dict["highPrice"]
         low_prices = cont_eurusd_Dict["lowPrice"]
+        return high_prices,low_prices
+    elif pair == "EURJPY":
+        high_prices = cont_eurjpy_Dict["highPrice"]
+        low_prices = cont_eurjpy_Dict["lowPrice"]
+        return high_prices,low_prices
+    elif pair == "USDCAD":
+        high_prices = cont_usdcad_Dict["highPrice"]
+        low_prices = cont_usdcad_Dict["lowPrice"]
+        return high_prices,low_prices
+    elif pair == "AUDCAD":
+        high_prices = cont_audcad_Dict["highPrice"]
+        low_prices = cont_audcad_Dict["lowPrice"]
+        return high_prices,low_prices
+    elif pair == "USDJPY":
+        high_prices = cont_usdjpy_Dict["highPrice"]
+        low_prices = cont_usdjpy_Dict["lowPrice"]
+        return high_prices,low_prices
+    elif pair == "GBPUSD":
+        high_prices = cont_gbpusd_Dict["highPrice"]
+        low_prices = cont_gbpusd_Dict["lowPrice"]
+        return high_prices,low_prices
+    elif pair == "GBPJPY":
+        high_prices = cont_gbpjpy_Dict["highPrice"]
+        low_prices = cont_gbpjpy_Dict["lowPrice"]
         return high_prices,low_prices
     
 
@@ -277,11 +356,11 @@ async def awaitSupportResistance(price, pair, timeframe, type):
         retest_df = pd.DataFrame(latest_candle)
         
         # Check for the specific candlestick pattern
-        if type == "sell" and detect_bearish_engulfing(retest_df):
+        if type == "sell" and detect_bearish_patterns(retest_df):
             print(f"Bearish Engulfing pattern detected. Preparing to sell.")
             pattern_detected = True
             break
-        elif type == "buy" and detect_bullish_engulfing(retest_df):
+        elif type == "buy" and detect_bullish_patterns(retest_df):
             print(f"Bullish Engulfing pattern detected. Preparing to buy.")
             pattern_detected = True
             break
@@ -295,17 +374,64 @@ async def awaitSupportResistance(price, pair, timeframe, type):
         print(f"No {pattern_name} pattern detected. Exiting without placing a trade.")
     
 # Candlestick pattern detection functions
-def detect_bearish_engulfing(df):
-    # Check if the last two candles form a Bearish Engulfing pattern
+def detect_bearish_patterns(df):
+    # Bearish Engulfing pattern
     if df.iloc[-2]["open"] < df.iloc[-2]["close"] and df.iloc[-1]["open"] > df.iloc[-1]["close"]:
         if df.iloc[-1]["open"] > df.iloc[-2]["close"] and df.iloc[-1]["close"] < df.iloc[-2]["open"]:
             return True
+    
+    # shooting star
+    candle = df.iloc[-1]
+    body_size = abs(candle["close"] - candle["open"])
+    upper_shadow = candle["high"] - candle["close"] if candle["close"] > candle["open"] else candle["high"] - candle["open"]
+    lower_shadow = candle["open"] - candle["low"] if candle["close"] > candle["open"] else candle["close"] - candle["low"]
+
+    if upper_shadow > 2 * body_size and lower_shadow < body_size:
+        return True
+    
+    # evening star
+    if df.iloc[-3]["close"] > df.iloc[-3]["open"] and df.iloc[-1]["open"] > df.iloc[-1]["close"]:
+        if  df.iloc[-2]["open"] > df.iloc[-3]["close"] and  df.iloc[-2]["close"] <  df.iloc[-2]["open"] and df.iloc[-1]["close"] < df.iloc[-3]["open"]:
+            return True
+        
+    # dark cloud cover
+    if len(df) < 2:
+        return False
+    prev_candle = df.iloc[-2]
+    candle = df.iloc[-1]
+    
+    if prev_candle["close"] > prev_candle["open"] and candle["open"] > prev_candle["high"]:
+        if candle["close"] < prev_candle["midpoint"]:
+            return True
     return False
 
-def detect_bullish_engulfing(df):
-    # Check if the last two candles form a Bullish Engulfing pattern
+
+def detect_bullish_patterns(df):
+    # Bullish Engulfing pattern
     if df.iloc[-2]["open"] > df.iloc[-2]["close"] and df.iloc[-1]["open"] < df.iloc[-1]["close"]:
         if df.iloc[-1]["open"] < df.iloc[-2]["close"] and df.iloc[-1]["close"] > df.iloc[-2]["open"]:
+            return True
+
+    # morning star
+    if df.iloc[-3]["open"] > df.iloc[-3]["close"] and df.iloc[-1]["close"] > df.iloc[-1]["open"]:
+        if df.iloc[-2]["open"] < df.iloc[-3]["close"] and df.iloc[-2]["close"] < df.iloc[-2]["open"] and df.iloc[-1]["open"] > df.iloc[-2]["close"]:
+            return True
+    
+    # hammer pattern
+    candle = df.iloc[-1]
+    body_size = abs(candle["close"] - candle["open"])
+    lower_shadow = candle["open"] - candle["low"] if candle["close"] > candle["open"] else candle["close"] - candle["low"]
+    upper_shadow = candle["high"] - candle["close"] if candle["close"] > candle["open"] else candle["high"] - candle["open"]
+
+    if lower_shadow > 2 * body_size and upper_shadow < body_size:
+        return True
+        
+    # piercing line
+    prev_candle = df.iloc[-2]
+    candle = df.iloc[-1]
+    
+    if prev_candle["close"] < prev_candle["open"] and candle["open"] < prev_candle["low"]:
+        if candle["close"] > prev_candle["midpoint"] and candle["close"] < prev_candle["open"]:
             return True
     return False
 
