@@ -285,8 +285,21 @@ def isPriceCloseToAnySweetSpot(pair):
     for timeframe in lower_TIMEFRAMES:
         tick =mt5.symbol_info_tick(pair)
         print(f"The price for {pair} is currently {tick.bid} at {timeframe} timeframe")
-        current_high_price = math.floor(tick.bid)
-        current_low_price = math.floor(tick.ask)
+        current_high_price = int(0)
+        current_low_price = int(0)
+        toleranceLevel=int(0)
+        if(pair not in ["XAUUSD","BTCUSD"]):
+            current_high_price=round(tick.bid,4)
+            current_low_price=round(tick.ask,4)
+            toleranceLevel=0.0002
+        elif("JPY" in str(pair)):
+            current_high_price=round(tick.bid,3)
+            current_low_price=round(tick.ask,3)
+            toleranceLevel=0.02
+        else:
+            current_high_price = math.floor(tick.bid)
+            current_low_price = math.floor(tick.ask)
+            toleranceLevel=2
         rsi,signal = calculateRSI(pair,timeframe)
         # time.sleep(6)
         high_prices,low_prices=setHighLowPriceBasedOnPair(pair)        
@@ -297,15 +310,15 @@ def isPriceCloseToAnySweetSpot(pair):
         for price in high_prices:
             # print(f"we have a high price of {price} for the {pair} pair")
             # Check if the price is within the specified range
-            if abs(price-current_high_price) <=2:
+            if (abs(price-current_high_price) <=toleranceLevel):
                 print("We have a price on our higher sweep")
-                print(f"The value of the RSI is {rsi} and its {signal} at the {timeframe} timeframe")
+                print(f"The value of the RSI is {rsi} and its {signal} at the {timeframe} timeframe at {pair}")
                 if(signal == "sell"):
                     print("We have a complete sell signal")
                     awaitSupportResistance(tick.ask,pair,timeframe,type="sell")
                     return True
         for price in low_prices:
-            if abs(price-current_high_price) <=2:
+            if abs(price-current_low_price) <=2:
                 print("We have price on our lower sweet spot")
                 print(f"The value of the RSI is {rsi} and its {signal}")
                 if(signal == "buy"):
@@ -364,7 +377,7 @@ def awaitSupportResistance(price, pair, timeframe, type):
 
     # Calculate ATR, stop loss, and take profit levels
     atr = calculate_atr(retest_df)
-    stop_loss, take_profit = calculate_levels(price, atr, type)
+    stop_loss, take_profit = calculate_levels(price, atr, type,pair)
     
     # Define the pattern we are looking for based on the trade type
     pattern_detected = False
@@ -480,18 +493,118 @@ def calculate_atr(df, period=14):
 
     return df["ATR"].iloc[-1]
 
-def calculate_levels(entry_price, atr, position_type, stop_loss_multiplier=1.5, take_profit_multiplier=3):
+def calculate_levels(entry_price, atr, position_type,pair, stop_loss_multiplier=1.5, take_profit_multiplier=3):
+    stop_loss=int(0)
+    take_profit=int(0)
     if position_type == 'buy':
-        stop_loss = entry_price - (stop_loss_multiplier * atr)
-        take_profit = entry_price + (take_profit_multiplier * atr)
+        if(pair == "XAUUSD"):
+            new_stops_low=find_closest(entry_price,cont_xauusd_Dict["lowPrice"])
+            stop_loss = new_stops_low - (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_xauusd_Dict["highPrice"])
+            take_profit = new_takes_high + (take_profit_multiplier * atr)
+        elif(pair == "BTCUSD"):
+            new_stops_low=find_closest(entry_price,cont_btcusd_Dict["lowPrice"])
+            stop_loss = new_stops_low - (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_btcusd_Dict["highPrice"])
+            take_profit = new_takes_high + (take_profit_multiplier * atr)
+        elif(pair == "EURUSD"):
+            new_stops_low=find_closest(entry_price,cont_eurusd_Dict["lowPrice"])
+            stop_loss = new_stops_low - (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_eurusd_Dict["highPrice"])
+            take_profit = new_takes_high + (take_profit_multiplier * atr)
+        elif(pair == "EURJPY"):
+            new_stops_low=find_closest(entry_price,cont_eurjpy_Dict["lowPrice"])
+            stop_loss = new_stops_low - (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_eurjpy_Dict["highPrice"])
+            take_profit = new_takes_high + (take_profit_multiplier * atr)
+        elif(pair == "AUDCAD"):
+            new_stops_low=find_closest(entry_price,cont_audcad_Dict["lowPrice"])
+            stop_loss = new_stops_low - (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_audcad_Dict["highPrice"])
+            take_profit = new_takes_high + (take_profit_multiplier * atr)
+        elif(pair == "USDCAD"):
+            new_stops_low=find_closest(entry_price,cont_usdcad_Dict["lowPrice"])
+            stop_loss = new_stops_low - (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_usdcad_Dict["highPrice"])
+            take_profit = new_takes_high + (take_profit_multiplier * atr)
+        elif(pair == "GBPUSD"):
+            new_stops_low=find_closest(entry_price,cont_gbpusd_Dict["lowPrice"])
+            stop_loss = new_stops_low - (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_gbpusd_Dict["highPrice"])
+            take_profit = new_takes_high + (take_profit_multiplier * atr)
+        elif(pair == "GBPJPY"):
+            new_stops_low=find_closest(entry_price,cont_gbpjpy_Dict["lowPrice"])
+            stop_loss = new_stops_low - (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_gbpjpy_Dict["highPrice"])
+            take_profit = new_takes_high + (take_profit_multiplier * atr)
+        elif(pair == "USDJPY"):
+            new_stops_low=find_closest(entry_price,cont_usdjpy_Dict["lowPrice"])
+            stop_loss = new_stops_low - (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_usdjpy_Dict["highPrice"])
+            take_profit = new_takes_high + (take_profit_multiplier * atr)
     elif position_type == 'sell':
-        stop_loss = entry_price + (stop_loss_multiplier * atr)
-        take_profit = entry_price - (take_profit_multiplier * atr)
+        if(pair == "XAUUSD"):
+            new_stops_low=find_closest(entry_price,cont_xauusd_Dict["highPrice"])
+            stop_loss = new_stops_low + (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_xauusd_Dict["lowPrice"])
+            take_profit = new_takes_high - (take_profit_multiplier * atr)
+        elif(pair == "BTCUSD"):
+            new_stops_low=find_closest(entry_price,cont_btcusd_Dict["highPrice"])
+            stop_loss = new_stops_low + (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_btcusd_Dict["lowPrice"])
+            take_profit = new_takes_high - (take_profit_multiplier * atr)
+        elif(pair == "EURUSD"):
+            new_stops_low=find_closest(entry_price,cont_eurusd_Dict["highPrice"])
+            stop_loss = new_stops_low + (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_eurusd_Dict["lowPrice"])
+            take_profit = new_takes_high - (take_profit_multiplier * atr)
+        elif(pair == "EURJPY"):
+            new_stops_low=find_closest(entry_price,cont_eurjpy_Dict["highPrice"])
+            stop_loss = new_stops_low + (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_eurjpy_Dict["lowPrice"])
+            take_profit = new_takes_high - (take_profit_multiplier * atr)
+        elif(pair == "AUDCAD"):
+            new_stops_low=find_closest(entry_price,cont_audcad_Dict["highPrice"])
+            stop_loss = new_stops_low + (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_audcad_Dict["lowPrice"])
+            take_profit = new_takes_high - (take_profit_multiplier * atr)
+        elif(pair == "USDCAD"):
+            new_stops_low=find_closest(entry_price,cont_usdcad_Dict["highPrice"])
+            stop_loss = new_stops_low + (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_usdcad_Dict["lowPrice"])
+            take_profit = new_takes_high - (take_profit_multiplier * atr)
+        elif(pair == "GBPUSD"):
+            new_stops_low=find_closest(entry_price,cont_gbpusd_Dict["highPrice"])
+            stop_loss = new_stops_low + (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_gbpusd_Dict["lowPrice"])
+            take_profit = new_takes_high - (take_profit_multiplier * atr)
+        elif(pair == "GBPJPY"):
+            new_stops_low=find_closest(entry_price,cont_gbpjpy_Dict["highPrice"])
+            stop_loss = new_stops_low + (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_gbpjpy_Dict["lowPrice"])
+            take_profit = new_takes_high - (take_profit_multiplier * atr)
+        elif(pair == "USDJPY"):
+            new_stops_low=find_closest(entry_price,cont_usdjpy_Dict["highPrice"])
+            stop_loss = new_stops_low + (stop_loss_multiplier * atr)
+            new_takes_high=find_closest(entry_price,cont_usdjpy_Dict["lowPrice"])
+            take_profit = new_takes_high - (take_profit_multiplier * atr)
     else:
         raise ValueError("position_type must be 'long' or 'short'")
     
     return stop_loss, take_profit
 
+def find_closest(target, array):
+    closest_value = array[0]
+    smallest_difference = abs(target - array[0])
+    
+    # Iterate over each element in the array
+    for num in array:
+        difference = abs(target - num)
+        if difference < smallest_difference:
+            smallest_difference = difference
+            closest_value = num
+            
+    return closest_value
 
 def market_order(symbol,volume,order_type,deviation,magic,stoploss,takeprofit):
     tick =mt5.symbol_info_tick(symbol)
