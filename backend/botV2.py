@@ -29,15 +29,15 @@ STANDARD_DEVIATIONS=int(2) # number of deviations for calculation of bolinger ba
 
 
 # window formation
-xauusd_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
-btcusd_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
-eurusd_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
-usdcad_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
-usdjpy_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
-audcad_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
-gbpusd_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
-gbpjpy_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
-eurjpy_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]}}
+xauusd_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]},16388:{"highPrice":[],"lowPrice":[]},16408:{"highPrice":[],"lowPrice":[]}}
+btcusd_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]},16388:{"highPrice":[],"lowPrice":[]},16408:{"highPrice":[],"lowPrice":[]}}
+eurusd_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]},16388:{"highPrice":[],"lowPrice":[]},16408:{"highPrice":[],"lowPrice":[]}}
+usdcad_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]},16388:{"highPrice":[],"lowPrice":[]},16408:{"highPrice":[],"lowPrice":[]}}
+usdjpy_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]},16388:{"highPrice":[],"lowPrice":[]},16408:{"highPrice":[],"lowPrice":[]}}
+audcad_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]},16388:{"highPrice":[],"lowPrice":[]},16408:{"highPrice":[],"lowPrice":[]}}
+gbpusd_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]},16388:{"highPrice":[],"lowPrice":[]},16408:{"highPrice":[],"lowPrice":[]}}
+gbpjpy_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]},16388:{"highPrice":[],"lowPrice":[]},16408:{"highPrice":[],"lowPrice":[]}}
+eurjpy_Dict ={1:{"highPrice":[],"lowPrice":[]},5:{"highPrice":[],"lowPrice":[]},15:{"highPrice":[],"lowPrice":[]},30:{"highPrice":[],"lowPrice":[]},16388:{"highPrice":[],"lowPrice":[]},16408:{"highPrice":[],"lowPrice":[]} }
 
 
 # contentious price points
@@ -79,6 +79,7 @@ def conn():
 def gatherDataController():
     print("We are gathering the data")
     global  lower_TIMEFRAMES,high_TIMEFRAME,SYMBOLS,SYMBOLZ
+    print([x for x in high_TIMEFRAME])
     for pair in SYMBOLZ:
         for timeframe in  lower_TIMEFRAMES:
             backtest_data = mt5.copy_rates_from_pos(pair,timeframe,1,NUM_BARS)
@@ -103,6 +104,8 @@ def gatherDataController():
             # pass the dataframe to another method for further pre-processing 
             splitAndPreprocess(bars,str(pair),timeframe)   
             # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
+            # larger scale of things
+ 
     while True:
         for pair in SYMBOLZ:
             if (isPriceCloseToAnySweetSpot(pair)):
@@ -153,48 +156,73 @@ def getHighLowPricesPerSplitDf(split_df,pair,timeframe):
     if(pair == "XAUUSD"):
         xauusd_Dict[timeframe]["highPrice"].append(math.floor(highClosePrice))
         xauusd_Dict[timeframe]["lowPrice"].append(math.floor(lowClosePrice))
-        windowToWindowAnalysis(xauusd_Dict,pair)
+        if(timeframe in high_TIMEFRAME):
+            windowToWindowAnalysis(xauusd_Dict,pair,16408,16388,30,True)
+        else:
+            windowToWindowAnalysis(xauusd_Dict,pair,30,15,5,False)
     if(pair == "BTCUSD"):
         btcusd_Dict[timeframe]["highPrice"].append(math.floor(highClosePrice))
         btcusd_Dict[timeframe]["lowPrice"].append(math.floor(lowClosePrice))
-        windowToWindowAnalysis(btcusd_Dict,pair)
+        if(timeframe in high_TIMEFRAME):
+            windowToWindowAnalysis(xauusd_Dict,pair,16408,16388,30,True)
+        else:
+            windowToWindowAnalysis(xauusd_Dict,pair,30,15,5,False)
     elif(pair == "EURUSD"):
         eurusd_Dict[timeframe]["highPrice"].append(highClosePrice)
         eurusd_Dict[timeframe]["lowPrice"].append(lowClosePrice)
-        windowToWindowAnalysis(eurjpy_Dict,pair)
+        if(timeframe in high_TIMEFRAME):
+            windowToWindowAnalysis(xauusd_Dict,pair,16408,16388,30,True)
+        else:
+            windowToWindowAnalysis(xauusd_Dict,pair,30,15,5,False)
     elif(pair == "USDCAD"):
         usdcad_Dict[timeframe]["highPrice"].append(highClosePrice)
         usdcad_Dict[timeframe]["lowPrice"].append(lowClosePrice)
-        windowToWindowAnalysis(usdcad_Dict,pair)
+        if(timeframe in high_TIMEFRAME):
+            windowToWindowAnalysis(xauusd_Dict,pair,16408,16388,30,True)
+        else:
+            windowToWindowAnalysis(xauusd_Dict,pair,30,15,5,False)
     elif(pair == "USDJPY"):
         usdjpy_Dict[timeframe]["highPrice"].append(highClosePrice)
         usdjpy_Dict[timeframe]["lowPrice"].append(lowClosePrice)
-        windowToWindowAnalysis(usdjpy_Dict,pair)
+        if(timeframe in high_TIMEFRAME):
+            windowToWindowAnalysis(xauusd_Dict,pair,16408,16388,30,True)
+        else:
+            windowToWindowAnalysis(xauusd_Dict,pair,30,15,5,False)
     elif(pair == "AUDCAD"):
         audcad_Dict[timeframe]["highPrice"].append(highClosePrice)
         audcad_Dict[timeframe]["lowPrice"].append(lowClosePrice)
-        windowToWindowAnalysis(audcad_Dict,pair)
+        if(timeframe in high_TIMEFRAME):
+            windowToWindowAnalysis(xauusd_Dict,pair,16408,16388,30,True)
+        else:
+            windowToWindowAnalysis(xauusd_Dict,pair,30,15,5,False)
     elif(pair == "GBPUSD"):
         gbpusd_Dict[timeframe]["highPrice"].append(highClosePrice)
         gbpusd_Dict[timeframe]["lowPrice"].append(lowClosePrice)
-        windowToWindowAnalysis(gbpusd_Dict,pair)
+        if(timeframe in high_TIMEFRAME):
+            windowToWindowAnalysis(xauusd_Dict,pair,16408,16388,30,True)
+        else:
+            windowToWindowAnalysis(xauusd_Dict,pair,30,15,5,False)
     elif(pair == "GBPJPY"):
         gbpjpy_Dict[timeframe]["highPrice"].append(highClosePrice)
         gbpjpy_Dict[timeframe]["lowPrice"].append(lowClosePrice)
-        windowToWindowAnalysis(eurjpy_Dict,pair)
+        if(timeframe in high_TIMEFRAME):
+            windowToWindowAnalysis(xauusd_Dict,pair,16408,16388,30,True)
+        else:
+            windowToWindowAnalysis(xauusd_Dict,pair,30,15,5,False)
     elif(pair == "EURJPY"):
         eurjpy_Dict[timeframe]["highPrice"].append(highClosePrice)
         eurjpy_Dict[timeframe]["lowPrice"].append(lowClosePrice)
-        windowToWindowAnalysis(eurjpy_Dict,pair)
+        if(timeframe in high_TIMEFRAME):
+            windowToWindowAnalysis(xauusd_Dict,pair,16408,16388,30,True)
+        else:
+            windowToWindowAnalysis(xauusd_Dict,pair,30,15,5,False) 
     
         
     
 
-def windowToWindowAnalysis(price_Dict,pair):
-    range_value = 2   
-
+def windowToWindowAnalysis(price_Dict,pair,comparator,firstLower,secondLower,populateConfirmed=False):
     # max price analysis for the same timeframe
-    for counter,price in enumerate(price_Dict[30]["highPrice"]):
+    for counter,price in enumerate(price_Dict[comparator]["highPrice"]):
         # price=math.floor(price)
         def is_within_range(price, target_price_arr,tolerance=0.01):
             for x in target_price_arr:
@@ -202,42 +230,68 @@ def windowToWindowAnalysis(price_Dict,pair):
                     return True
             return False
         if (
-                is_within_range(price, price_Dict[15]["highPrice"],tolerance=0.3 ) or
-                is_within_range(price, price_Dict[5]["highPrice"],tolerance=0.3 ) or
-                is_within_range(price, price_Dict[1]["highPrice"],tolerance=0.3 )
+                is_within_range(price, price_Dict[firstLower]["highPrice"],tolerance=0.3 ) or
+                is_within_range(price, price_Dict[secondLower]["highPrice"],tolerance=0.3 )
         ):
                 if(pair == "XAUUSD"):
-                    if price not in cont_xauusd_Dict["highPrice"]:
-                        cont_xauusd_Dict["highPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_xauusd_Dict["highPrice"]:
+                            cont_xauusd_Dict["highPrice"].append(price)
+                    else:
+                        cont_xauusd_Dict["confirmedPrice"].append(price)
                 elif(pair == "BTCUSD"):
-                    if price not in cont_btcusd_Dict["highPrice"]:
-                        cont_btcusd_Dict["highPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_btcusd_Dict["highPrice"]:
+                            cont_btcusd_Dict["highPrice"].append(price)
+                    else:
+                        cont_btcusd_Dict["confirmedPrice"].append(price)
                 elif(pair == "EURUSD"):
-                    if price not in cont_eurusd_Dict["highPrice"]:
-                        cont_eurusd_Dict["highPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_eurusd_Dict["highPrice"]:
+                            cont_eurusd_Dict["highPrice"].append(price)
+                    else:
+                        cont_eurusd_Dict["confirmedPrice"].append(price)
                 elif(pair == "EURJPY"):
-                    if price not in cont_eurjpy_Dict["highPrice"]:
-                        cont_eurjpy_Dict["highPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_eurjpy_Dict["highPrice"]:
+                            cont_eurjpy_Dict["highPrice"].append(price)
+                    else:
+                        cont_eurjpy_Dict["confirmedPrice"].append(price)
                 elif(pair == "AUDCAD"):
-                    if price not in cont_audcad_Dict["highPrice"]:
-                        cont_audcad_Dict["highPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_audcad_Dict["highPrice"]:
+                            cont_audcad_Dict["highPrice"].append(price)
+                    else:
+                        cont_audcad_Dict["confirmedPrice"].append(price)
                 elif(pair == "USDCAD"):
-                    if price not in cont_usdcad_Dict["highPrice"]:
-                        cont_usdcad_Dict["highPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_usdcad_Dict["highPrice"]:
+                            cont_usdcad_Dict["highPrice"].append(price)
+                    else:
+                        cont_usdcad_Dict["confirmedPrice"].append(price)
                 elif(pair == "GBPUSD"):
-                    if price not in cont_gbpusd_Dict["highPrice"]:
-                        cont_gbpusd_Dict["highPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_gbpusd_Dict["highPrice"]:
+                            cont_gbpusd_Dict["highPrice"].append(price)
+                    else:
+                        cont_gbpusd_Dict["confirmedPrice"].append(price)
                 elif(pair == "GBPJPY"):
-                    if price not in cont_gbpjpy_Dict["highPrice"]:
-                        cont_gbpjpy_Dict["highPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_gbpjpy_Dict["highPrice"]:
+                            cont_gbpjpy_Dict["highPrice"].append(price)
+                    else:
+                        cont_gbpjpy_Dict["confirmedPrice"].append(price)
                 elif(pair == "USDJPY"):
-                    if price not in cont_usdjpy_Dict["highPrice"]:
-                        cont_usdjpy_Dict["highPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_usdjpy_Dict["highPrice"]:
+                            cont_usdjpy_Dict["highPrice"].append(price)
+                    else:
+                        cont_usdjpy_Dict["confirmedPrice"].append(price)
                 # rsi,signal=calculateRSI(pair,30)
                 # cont_xauusd_Dict["highPriceRSI"].append(rsi)
 
         
-    for counter,price in enumerate(price_Dict[30]["lowPrice"]):
+    for counter,price in enumerate(price_Dict[comparator]["lowPrice"]):
         # price=math.floor(price)
         def is_within_range(price, target_price_arr,tolerance=0.01):
             for x in target_price_arr:
@@ -245,38 +299,64 @@ def windowToWindowAnalysis(price_Dict,pair):
                     return True
             return False
         if (
-            is_within_range(price, price_Dict[15]["lowPrice"],tolerance=0.3 ) or
-            is_within_range(price, price_Dict[5]["lowPrice"],tolerance=0.3 ) or
-            is_within_range(price, price_Dict[1]["lowPrice"],tolerance=0.3 )
+            is_within_range(price, price_Dict[firstLower]["lowPrice"],tolerance=0.03 ) or
+            is_within_range(price, price_Dict[secondLower]["lowPrice"],tolerance=0.03 )
         ):
         
                 if(pair == "XAUUSD"):
-                    if price not in cont_xauusd_Dict["lowPrice"]:
-                        cont_xauusd_Dict["lowPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_xauusd_Dict["lowPrice"]:
+                            cont_xauusd_Dict["lowPrice"].append(price)
+                    else:
+                        cont_xauusd_Dict["confirmedPrice"].append(price)
                 elif(pair == "BTCUSD"):
-                    if price not in cont_btcusd_Dict["lowPrice"]:
-                        cont_btcusd_Dict["lowPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_btcusd_Dict["lowPrice"]:
+                            cont_btcusd_Dict["lowPrice"].append(price)
+                    else:
+                        cont_btcusd_Dict["confirmedPrice"].append(price)
                 elif(pair == "EURUSD"):
-                    if price not in cont_eurusd_Dict["lowPrice"]:
-                        cont_eurusd_Dict["lowPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_eurusd_Dict["lowPrice"]:
+                            cont_eurusd_Dict["lowPrice"].append(price)
+                    else:
+                        cont_eurusd_Dict["confirmedPrice"].append(price)
                 elif(pair == "EURJPY"):
-                    if price not in cont_eurjpy_Dict["lowPrice"]:
-                        cont_eurjpy_Dict["lowPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_eurjpy_Dict["lowPrice"]:
+                            cont_eurjpy_Dict["lowPrice"].append(price)
+                    else:
+                        cont_eurjpy_Dict["confirmedPrice"].append(price)
                 elif(pair == "AUDCAD"):
-                    if price not in cont_audcad_Dict["lowPrice"]:
-                        cont_audcad_Dict["lowPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_audcad_Dict["lowPrice"]:
+                            cont_audcad_Dict["lowPrice"].append(price)
+                    else:
+                        cont_audcad_Dict["confirmedPrice"].append(price)
                 elif(pair == "USDCAD"):
-                    if price not in cont_usdcad_Dict["lowPrice"]:
-                        cont_usdcad_Dict["lowPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_usdcad_Dict["lowPrice"]:
+                            cont_usdcad_Dict["lowPrice"].append(price)
+                    else:
+                        cont_usdcad_Dict["confirmedPrice"].append(price)
                 elif(pair == "GBPUSD"):
-                    if price not in cont_gbpusd_Dict["lowPrice"]:
-                        cont_gbpusd_Dict["lowPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_gbpusd_Dict["lowPrice"]:
+                            cont_gbpusd_Dict["lowPrice"].append(price)
+                    else:
+                        cont_gbpusd_Dict["confirmedPrice"].append(price)
                 elif(pair == "GBPJPY"):
-                    if price not in cont_gbpjpy_Dict["lowPrice"]:
-                        cont_gbpjpy_Dict["lowPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_gbpjpy_Dict["lowPrice"]:
+                            cont_gbpjpy_Dict["lowPrice"].append(price)
+                    else:
+                        cont_gbpjpy_Dict["confirmedPrice"].append(price)
                 elif(pair == "USDJPY"):
-                    if price not in cont_usdjpy_Dict["lowPrice"]:
-                        cont_usdjpy_Dict["lowPrice"].append(price)
+                    if populateConfirmed == False:
+                        if price not in cont_usdjpy_Dict["lowPrice"]:
+                            cont_usdjpy_Dict["lowPrice"].append(price)
+                    else:
+                        cont_usdjpy_Dict["confirmedPrice"].append(price)
                 # rsi,signal=calculateRSI(pair,30)
                 # cont_xauusd_Dict["lowPriceRSI"].append(rsi)
 
