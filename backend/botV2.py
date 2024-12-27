@@ -136,8 +136,6 @@ def gatherDataController():
             # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
             # larger scale of things
 
-        
-
     while True:
         for pair in SYMBOLS:
             isTrending=False
@@ -152,7 +150,6 @@ def gatherDataController():
                 trend= dict(trend)
                 if(trend["pair"] == pair and str(trend["final_trend"]).startswith("Confirmed")):
                     isTrending=True
-                    break
             #if(isTrending):
             if (isPriceCloseToAnySweetSpot(pair)):
                 time.sleep(3)
@@ -517,6 +514,9 @@ def isPriceCloseToAnySweetSpot(pair):
                 print(f"The value of the RSI is {rsi} and its {signal} at the {timeframe} timeframe at {pair}")
                 if (signal == "sell"):
                     print("We have a complete sell signal")
+                    signal_message=f" We have a {signal} signal for the {pair} pair at the {timeframe} timeframe"
+                    # send the email with signal notice
+                    send_email_notification(f"{pair} TRADING SIGNAL",signal_message)
                     asyncio.run(awaitSupportResistance(tick.ask, pair, timeframe, type="sell"))
                     return True
         for price in low_prices:

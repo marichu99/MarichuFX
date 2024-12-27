@@ -25,7 +25,6 @@ def send_email_notification(subject, body):
 
         # Attach the email body
         msg.attach(MIMEText(body, "plain"))
-        print(f"The email password is {EMAIL_PASSWORD}")
 
         # Connect to the server
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
