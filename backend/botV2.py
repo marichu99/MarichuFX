@@ -4,6 +4,7 @@ import time
 import pandas as pd
 import numpy as np
 from threading import Thread
+from tradenotifier import send_email_notification
 import sys
 import math
 import json
@@ -12,7 +13,8 @@ import asyncio
 
 
 # global variables
-SYMBOLS = ["XAUUSD", "BTCUSD.lv"]
+SYMBOLS = ["XAUUSD", "EURUSD", "USDCAD", "USDJPY",
+           "AUDCAD", "GBPUSD", "GBPJPY", "EURJPY"]
 SYMBOLZ = ["XAUUSD", "EURUSD", "USDCAD", "USDJPY",
            "AUDCAD", "GBPUSD", "GBPJPY", "EURJPY"]
 TIMEFRAME = mt5.TIMEFRAME_M15
@@ -20,6 +22,7 @@ high_TIMEFRAME = [mt5.TIMEFRAME_M30, mt5.TIMEFRAME_M15,
                   mt5.TIMEFRAME_H1, mt5.TIMEFRAME_H4]
 lower_TIMEFRAMES = [mt5.TIMEFRAME_M1, mt5.TIMEFRAME_M5,
                     mt5.TIMEFRAME_M15, mt5.TIMEFRAME_M30]
+extremelyHigh_TIMEFRAMES=[mt5.TIMEFRAME_D1]
 all_TIMEFRAMES = high_TIMEFRAME+lower_TIMEFRAMES
 NUM_BARS = 1000
 VOLUME = 0.1
@@ -72,6 +75,9 @@ cont_gbpjpy_Dict = {"highPrice": [], "lowPrice": [],
 cont_eurjpy_Dict = {"highPrice": [], "lowPrice": [],
                     "confirmedPrice": [], "highPriceRSI": [], "lowPriceRSI": []}
 
+#an array of dictionaries
+trendAnalysisDicts=[]
+
 ema_20 = []
 ema_5 = []
 
@@ -103,7 +109,7 @@ def gatherDataController():
     print("We are gathering the data")
     global lower_TIMEFRAMES, high_TIMEFRAME, all_TIMEFRAMES, SYMBOLS, SYMBOLZ
     print([x for x in high_TIMEFRAME])
-    for pair in SYMBOLZ:
+    for pair in SYMBOLS:
         for timeframe in all_TIMEFRAMES:
             backtest_data = mt5.copy_rates_from_pos(
                 pair, timeframe, 1, NUM_BARS)
@@ -113,8 +119,7 @@ def gatherDataController():
 
             price = bars.iloc[-1]["close"]
 
-            print(f"The price is {price} for {
-                  pair} at the {timeframe} timeframe")
+            print(f"The price is {price} for {pair} at the {timeframe} timeframe")
 
             # Define the directory path
             directory = 'backend/backtest'
@@ -131,11 +136,111 @@ def gatherDataController():
             # since we have price points that are repetitive, lets get the current price and see whether it is close to any of the points
             # larger scale of things
 
+        
+
     while True:
-        for pair in SYMBOLZ:
+        for pair in SYMBOLS:
+            isTrending=False
+            for timeFrame in extremelyHigh_TIMEFRAMES:
+                # the range below is number of bars we excpect the chart to be trending
+                range=50
+                backtest_data = mt5.copy_rates_from_pos(pair, timeframe, 1, range)
+                bars = pd.DataFrame(backtest_data)
+                trendAnalysis(pair,bars,timeFrame,range)
+            # enforce we only trade trends
+            for trend in trendAnalysisDicts:
+                trend= dict(trend)
+                if(trend["pair"] == pair and str(trend["final_trend"]).startswith("Confirmed")):
+                    isTrending=True
+                    break
+            #if(isTrending):
             if (isPriceCloseToAnySweetSpot(pair)):
                 time.sleep(3)
                 break
+
+def trendAnalysis(pair, df, timeframe, range_period=200):
+    """
+    Analyze the trend for a given trading pair and timeframe using both SMA, EMA, and price action (higher highs, lower lows)
+    over a specified range of candles (default 200) to detect trend reversals and price action patterns.
+    
+    Args:
+        pair (str): The trading pair (e.g., "EUR/USD").
+        df (pd.DataFrame): The data containing OHLC (Open, High, Low, Close) and time columns.
+        timeframe (str): The timeframe for analysis (e.g., "1h", "4h", "1d").
+        range_period (int): The number of candles over which to check higher highs/lower lows (default is 200).
+    
+    Returns:
+        dict: A dictionary containing trend information, including moving averages, price action analysis, and final trend.
+    """
+    # Ensure the dataframe has the required columns
+
+    df = pd.DataFrame(df)
+    required_columns = {'open', 'high', 'low', 'close'}
+    if not required_columns.issubset(df.columns):
+        raise ValueError(f"DataFrame must contain the following columns: {required_columns}")
+    
+    # Calculate Moving Averages
+    df['SMA_200'] = df['close'].rolling(window=200).mean()  # 200-period Simple Moving Average
+    df['EMA_50'] = df['close'].ewm(span=50, adjust=False).mean()  # 50-period Exponential Moving Average
+
+    # Determine trend based on SMA and EMA
+    ma_trend = ""
+    if df['EMA_50'].iloc[-1] > df['SMA_200'].iloc[-1]:
+        ma_trend = "Uptrend"
+    elif df['EMA_50'].iloc[-1] < df['SMA_200'].iloc[-1]:
+        ma_trend = "Downtrend"
+    else:
+        ma_trend = "Sideways"
+    
+    # Check for higher highs and higher lows over the last 'range_period' candles
+    highest_high = df['high'].iloc[-range_period:].max()  # Highest high in the last 'range_period' candles
+    lowest_low = df['low'].iloc[-range_period:].min()    # Lowest low in the last 'range_period' candles
+    
+    # Check for if the highs and lows are making higher or lower points over the range
+    higher_highs = df['high'].iloc[-range_period:].is_monotonic_increasing  # Check if highs are increasing
+    higher_lows = df['low'].iloc[-range_period:].is_monotonic_increasing  # Check if lows are increasing
+    lower_highs = df['high'].iloc[-range_period:].is_monotonic_decreasing  # Check if highs are decreasing
+    lower_lows = df['low'].iloc[-range_period:].is_monotonic_decreasing  # Check if lows are decreasing
+
+    # Determine if the price is making higher highs and higher lows (uptrend) or lower highs and lower lows (downtrend)
+    price_action_trend = ""
+    if higher_highs and higher_lows:
+        price_action_trend = "Uptrend (Higher Highs and Higher Lows)"
+    elif lower_highs and lower_lows:
+        price_action_trend = "Downtrend (Lower Highs and Lower Lows)"
+    else:
+        price_action_trend = "Sideways (No clear higher highs/lows or lower highs/lows)"
+
+    # Combine trend from moving averages and price action analysis
+    final_trend = ""
+    if ma_trend == "Uptrend" and price_action_trend.startswith("Uptrend"):
+        final_trend = "Confirmed Uptrend"
+    elif ma_trend == "Downtrend" and price_action_trend.startswith("Downtrend"):
+        final_trend = "Confirmed Downtrend"
+    elif price_action_trend == "Sideways (No clear higher highs/lows or lower highs/lows)" and ma_trend == "Sideways":
+        final_trend = "Sideways (No Clear Trend)"
+    else:
+        final_trend = "Possible Reversal or Consolidation"
+
+    # Create a dictionary with all relevant information for easy lookup
+    trend_info = {
+        "pair": pair,
+        "timeframe": timeframe,
+        "ma_trend": ma_trend,
+        "price_action_trend": price_action_trend,
+        "final_trend": final_trend,
+        "highest_high": highest_high,
+        "lowest_low": lowest_low,
+        "range_period": range_period
+    }
+
+    # Log the result for this pair
+    #print(f"{pair} ({timeframe}): Trend based on MA is {ma_trend}")
+    #print(f"Price action analysis: {price_action_trend}")
+    #print(f"Final trend analysis: {final_trend}")
+    trendAnalysisDicts.append(trend_info)
+
+    return trend_info
 
 
 def splitAndPreprocess(df, pair, timeframe):
@@ -183,63 +288,63 @@ def getHighLowPricesPerSplitDf(split_df, pair, timeframe):
         xauusd_Dict[timeframe]["highPrice"].append(math.floor(highClosePrice))
         xauusd_Dict[timeframe]["lowPrice"].append(math.floor(lowClosePrice))
         if (timeframe in high_TIMEFRAME):
-            windowToWindowAnalysis(xauusd_Dict, pair, 16388, 16388, 30, True)
+            windowToWindowAnalysis(xauusd_Dict, pair, mt5.TIMEFRAME_H4, mt5.TIMEFRAME_H1, 30, True)
         else:
             windowToWindowAnalysis(xauusd_Dict, pair, 30, 15, 5, False)
     if (pair == "BTCUSD"):
         btcusd_Dict[timeframe]["highPrice"].append(math.floor(highClosePrice))
         btcusd_Dict[timeframe]["lowPrice"].append(math.floor(lowClosePrice))
         if (timeframe in high_TIMEFRAME):
-            windowToWindowAnalysis(btcusd_Dict, pair, 16388, 16388, 30, True)
+            windowToWindowAnalysis(btcusd_Dict, pair, mt5.TIMEFRAME_H4, mt5.TIMEFRAME_H1, 30, True)
         else:
             windowToWindowAnalysis(btcusd_Dict, pair, 30, 15, 5, False)
     elif (pair == "EURUSD"):
         eurusd_Dict[timeframe]["highPrice"].append(highClosePrice)
         eurusd_Dict[timeframe]["lowPrice"].append(lowClosePrice)
         if (timeframe in high_TIMEFRAME):
-            windowToWindowAnalysis(eurusd_Dict, pair, 16388, 16388, 30, True)
+            windowToWindowAnalysis(eurusd_Dict, pair,  mt5.TIMEFRAME_H4, mt5.TIMEFRAME_H1, 30, True)
         else:
             windowToWindowAnalysis(eurusd_Dict, pair, 30, 15, 5, False)
     elif (pair == "USDCAD"):
         usdcad_Dict[timeframe]["highPrice"].append(highClosePrice)
         usdcad_Dict[timeframe]["lowPrice"].append(lowClosePrice)
         if (timeframe in high_TIMEFRAME):
-            windowToWindowAnalysis(usdcad_Dict, pair, 16388, 16388, 30, True)
+            windowToWindowAnalysis(usdcad_Dict, pair,  mt5.TIMEFRAME_H4, mt5.TIMEFRAME_H1, 30, True)
         else:
             windowToWindowAnalysis(usdcad_Dict, pair, 30, 15, 5, False)
     elif (pair == "USDJPY"):
         usdjpy_Dict[timeframe]["highPrice"].append(highClosePrice)
         usdjpy_Dict[timeframe]["lowPrice"].append(lowClosePrice)
         if (timeframe in high_TIMEFRAME):
-            windowToWindowAnalysis(usdjpy_Dict, pair, 16388, 16388, 30, True)
+            windowToWindowAnalysis(usdjpy_Dict, pair,  mt5.TIMEFRAME_H4, mt5.TIMEFRAME_H1, 30, True)
         else:
             windowToWindowAnalysis(usdjpy_Dict, pair, 30, 15, 5, False)
     elif (pair == "AUDCAD"):
         audcad_Dict[timeframe]["highPrice"].append(highClosePrice)
         audcad_Dict[timeframe]["lowPrice"].append(lowClosePrice)
         if (timeframe in high_TIMEFRAME):
-            windowToWindowAnalysis(audcad_Dict, pair, 16388, 16388, 30, True)
+            windowToWindowAnalysis(audcad_Dict, pair,  mt5.TIMEFRAME_H4, mt5.TIMEFRAME_H1, 30, True)
         else:
             windowToWindowAnalysis(audcad_Dict, pair, 30, 15, 5, False)
     elif (pair == "GBPUSD"):
         gbpusd_Dict[timeframe]["highPrice"].append(highClosePrice)
         gbpusd_Dict[timeframe]["lowPrice"].append(lowClosePrice)
         if (timeframe in high_TIMEFRAME):
-            windowToWindowAnalysis(gbpusd_Dict, pair, 16388, 16388, 30, True)
+            windowToWindowAnalysis(gbpusd_Dict, pair,  mt5.TIMEFRAME_H4, mt5.TIMEFRAME_H1, 30, True)
         else:
             windowToWindowAnalysis(gbpusd_Dict, pair, 30, 15, 5, False)
     elif (pair == "GBPJPY"):
         gbpjpy_Dict[timeframe]["highPrice"].append(highClosePrice)
         gbpjpy_Dict[timeframe]["lowPrice"].append(lowClosePrice)
         if (timeframe in high_TIMEFRAME):
-            windowToWindowAnalysis(gbpjpy_Dict, pair, 16388, 16388, 30, True)
+            windowToWindowAnalysis(gbpjpy_Dict, pair,  mt5.TIMEFRAME_H4, mt5.TIMEFRAME_H1, 30, True)
         else:
             windowToWindowAnalysis(gbpjpy_Dict, pair, 30, 15, 5, False)
     elif (pair == "EURJPY"):
         eurjpy_Dict[timeframe]["highPrice"].append(highClosePrice)
         eurjpy_Dict[timeframe]["lowPrice"].append(lowClosePrice)
         if (timeframe in high_TIMEFRAME):
-            windowToWindowAnalysis(eurjpy_Dict, pair, 16388, 16388, 30, True)
+            windowToWindowAnalysis(eurjpy_Dict, pair,  mt5.TIMEFRAME_H4, mt5.TIMEFRAME_H1, 30, True)
         else:
             windowToWindowAnalysis(eurjpy_Dict, pair, 30, 15, 5, False)
 
@@ -256,11 +361,8 @@ def windowToWindowAnalysis(price_Dict, pair, comparator, firstLower, secondLower
     # max price analysis for the same timeframe
     for counter, price in enumerate(price_Dict[comparator]["highPrice"]):
         # price=math.floor(price)
-        def is_within_range(price, target_price_arr, tolerance):
-            for x in target_price_arr:
-                if abs(price - x) <= tolerance:
-                    return True
-            return False
+        def is_within_range(price, target_prices, tolerance):
+            return any(abs(price - target) <= tolerance for target in target_prices)
         if (
                 is_within_range(price, price_Dict[firstLower]["highPrice"], tolerance=tolerance) or
                 is_within_range(
@@ -380,8 +482,7 @@ def isPriceCloseToAnySweetSpot(pair):
     global lower_TIMEFRAMES
     for timeframe in lower_TIMEFRAMES:
         tick = mt5.symbol_info_tick(pair)
-        print(f"The price for {pair} is currently {
-              tick.bid} at {timeframe} timeframe")
+        print(f"The price for {pair} is currently {tick.bid} at {timeframe} timeframe")
         current_high_price = int(0)
         current_low_price = int(0)
         toleranceLevel = int(0)
@@ -404,6 +505,7 @@ def isPriceCloseToAnySweetSpot(pair):
 
         # Print each high price
         print(f"The high prices for {pair} {high_prices}")
+        print(f"The low prices for {pair} {low_prices}")
 
         print(f"The confirmed prices for {pair} {confirmed_price}")
         print(current_high_price)
@@ -412,12 +514,10 @@ def isPriceCloseToAnySweetSpot(pair):
             # Check if the price is within the specified range
             if (abs(price-current_high_price) <= toleranceLevel):
                 print("We have a price on our higher sweep")
-                print(f"The value of the RSI is {rsi} and its {
-                      signal} at the {timeframe} timeframe at {pair}")
+                print(f"The value of the RSI is {rsi} and its {signal} at the {timeframe} timeframe at {pair}")
                 if (signal == "sell"):
                     print("We have a complete sell signal")
-                    awaitSupportResistance(
-                        tick.ask, pair, timeframe, type="sell")
+                    asyncio.run(awaitSupportResistance(tick.ask, pair, timeframe, type="sell"))
                     return True
         for price in low_prices:
             if abs(price-current_low_price) <= 2:
@@ -425,8 +525,10 @@ def isPriceCloseToAnySweetSpot(pair):
                 print(f"The value of the RSI is {rsi} and its {signal}")
                 if (signal == "buy"):
                     print("We have a complete buy signal")
-                    awaitSupportResistance(
-                        tick.ask, pair, timeframe, type="buy")
+                    signal_message=f" We have a {signal} signal for the {pair} pair at the {timeframe} timeframe"
+                    # send the email with signal notice
+                    send_email_notification(f"{pair} TRADING SIGNAL",signal_message)
+                    asyncio.run(awaitSupportResistance(tick.ask, pair, timeframe, type="buy"))
                     return True
             # if there is price on our sweet spot, we wait for price to retest our sweet spot
     return False
@@ -488,7 +590,7 @@ def setHighLowPriceBasedOnPair(pair):
         return high_prices, low_prices, confirmed_price
 
 
-def awaitSupportResistance(price, pair, timeframe, type):
+async def awaitSupportResistance(price, pair, timeframe, type):
     # Fetch the last 10 candlesticks
     retest_df = mt5.copy_rates_from_pos(pair, timeframe, 0, 10)[
         ["close", "open", "high", "low"]]
@@ -530,6 +632,7 @@ def awaitSupportResistance(price, pair, timeframe, type):
 
     if pattern_detected:
         print(f"Final confirmation made, executing {type} order.")
+        print(f"The stop loss is {stop_loss} and the take profit is {take_profit}.")
         market_order(pair, VOLUME, type, DEVIATION,
                      MAGIC, stop_loss, take_profit)
     else:
